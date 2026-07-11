@@ -18,3 +18,21 @@ Identifies duplicates in an integer array by sorting the elements first, then pe
 *   **Constraint:** Destructive operation (modifies the input array order).
 
 ---
+
+## attempt_1.java
+*Style: concise*
+
+### Duplicate Detection (Sorting Approach)
+
+**Overview**
+This solution identifies duplicates in an integer array by sorting the elements first, then performing a linear scan to check for adjacent identical values.
+
+**Key Components**
+*   `hasDuplicate(int[] nums)`: The primary function that returns `true` if any value appears at least twice; otherwise, `false`.
+
+**Logic Notes**
+*   **Time Complexity:** $O(n \log n)$ due to the sorting step.
+*   **Space Complexity:** $O(1)$ or $O(\log n)$ depending on the `Arrays.sort()` implementation (in-place sorting).
+*   **Optimization Note:** This approach is space-efficient compared to using a `HashSet` ($O(n)$ space), but it is slower and modifies the input array. Only use this if memory constraints are strict and array mutation is permitted.
+
+---
