@@ -1,4 +1,4 @@
-// Try 1 to atempt1 file
+// Try 2 to same atempt1 file
 class Solution {
     public int[] twoSum(int[] nums, int target) {
          HashMap<Integer, Integer> a = new HashMap<Integer, Integer>();
