@@ -17,3 +17,20 @@ Creates a new array that is the concatenation of the input array `nums` with its
 *   **Memory Allocation:** Initializing `ans` with `n * 2` is more performant than dynamically resizing or using `System.arraycopy`, as it avoids intermediate object creation.
 
 ---
+
+## attempt_1.java
+*Style: concise*
+
+### Concatenation of Array (`getConcatenation`)
+
+**Purpose**
+Creates a new array that is the concatenation of the input array `nums` with itself (i.e., `[nums, nums]`), resulting in an array of size `2n`.
+
+**Key Components**
+*   `getConcatenation(int[] nums)`: Initializes a result array of size `2 * nums.length` and performs a single-pass copy to populate the values.
+
+**Implementation Notes**
+*   **Efficiency:** The algorithm runs in $O(n)$ time complexity and $O(n)$ space complexity.
+*   **Indexing Logic:** By using a single loop, you can map the index `i` from the original array to both `ans[i]` and `ans[i + n]` simultaneously, effectively filling both halves of the result array in one iteration.
+
+---
