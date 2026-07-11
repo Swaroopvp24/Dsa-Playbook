@@ -78,3 +78,26 @@ Validates bracket nesting using a manual stack implementation. It iterates throu
 *   **State Tracking:** The `top == -1` check at the end is critical to ensure no unmatched opening brackets remain in the stack.
 
 ---
+
+## attempt_1.java
+*Style: concise*
+
+### Study Notes: Valid Parentheses (Stack Implementation)
+
+**Overview**
+This implementation validates a string of brackets using a primitive array-based stack to achieve $O(n)$ time complexity and $O(n)$ space complexity. It optimizes performance by avoiding the overhead of `java.util.Stack` or `Deque`.
+
+**Key Components**
+*   `top`: An integer pointer tracking the "top" of the stack; initialized to -1 (empty).
+*   `stack`: A `char[]` pre-allocated to the length of the input string to act as a LIFO buffer.
+*   **The Loop**: Iterates through the string once, pushing the *expected* closing character onto the stack upon encountering an opening bracket.
+
+**Logic & Observations**
+*   **Early Exit**: The `s.length() % 2 != 0` check is an $O(1)$ heuristic that catches imbalanced strings immediately.
+*   **The "Inverse" Push**: By pushing the *closing* bracket onto the stack (e.g., encountering `(` pushes `)`), the comparison logic simplifies to a direct equality check (`stack[top--] != c`) when a closing bracket is found.
+*   **Boundary Conditions**: 
+    *   `top == -1` during a closing bracket check signifies an orphan closing bracket (e.g., `"]"`).
+    *   `top != -1` after the loop signifies unclosed opening brackets (e.g., `"((("`).
+*   **Memory Efficiency**: Using a primitive array with a pointer avoids boxing (`Character` vs `char`) and the synchronization overhead of standard collection classes.
+
+---
