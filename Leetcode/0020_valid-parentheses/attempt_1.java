@@ -1,4 +1,4 @@
-//Trying Attempt 1 filename again without reload on the other section of page(submissions)
+//Trying Attempt 1 filename again wiith reloaded 
 class Solution {
     public boolean isValid(String s) {
         // Top index of our custom stack (-1 means empty)
