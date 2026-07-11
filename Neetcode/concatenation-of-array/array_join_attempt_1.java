@@ -1,0 +1,13 @@
+// This is the second try I am doing to push same name with the file
+class Solution {
+    public int[] getConcatenation(int[] nums) {
+        int n = nums.length;
+        int ans[] = new int[n * 2];
+        System.out.println(ans.length);
+        for (int i = 0; i < n; i++) {
+            ans[i] = nums[i];
+            ans[i + n] = nums[i];
+        }
+        return ans;
+    }
+}
