@@ -101,3 +101,19 @@ This implementation validates a string of brackets using a primitive array-based
 *   **Memory Efficiency**: Using a primitive array with a pointer avoids boxing (`Character` vs `char`) and the synchronization overhead of standard collection classes.
 
 ---
+
+## attempt_1.java
+*Style: concise*
+
+### Valid Parentheses (Stack-based)
+
+Validates if a string contains correctly nested and matched parentheses, brackets, and braces using a custom stack array.
+
+*   **`isValid(String s)`**: Core algorithm that iterates through the string, pushing expected closing brackets onto a pre-allocated array and popping them for validation upon encountering a closing character.
+
+#### Key Logic Notes
+*   **Optimization**: Uses a primitive `char[]` array with a `top` index pointer as a stack to avoid the overhead of `java.util.Stack` or `Deque`.
+*   **Transformation**: Instead of pushing the opening bracket, the code pushes the *expected* closing bracket. This simplifies the comparison logic in the `else` block to a direct equality check (`stack[top--] != c`).
+*   **Early Exit**: Immediate `false` return if the string length is odd or if the stack underflows (e.g., `]`), ensuring $O(n)$ time complexity and $O(n)$ space complexity.
+
+---
