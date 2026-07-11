@@ -58,3 +58,23 @@ The implementation replaces `java.util.Stack<Character>` with `char[] stack`.
 *   **Memory Optimization:** Using `char[]` instead of `Stack<Character>` is a standard high-performance pattern in Java competitive programming and low-latency systems. It keeps data contiguous in memory, maximizing **L1/L2 cache hit rates**.
 
 ---
+
+## attempt_1.java
+*Style: concise*
+
+### Notes: Valid Parentheses
+
+**Overview**
+Validates bracket nesting using a manual stack implementation. It iterates through the input string, pushing the corresponding closing bracket onto the stack when an opening bracket is encountered, and verifying matches for closing brackets.
+
+**Key Components**
+*   `top`: Integer pointer tracking the stack index (initialized to `-1` for empty).
+*   `char[] stack`: Pre-allocated array used as a LIFO stack to store expected closing characters.
+*   `isValid(String s)`: Main logic; performs an O(n) pass to ensure all brackets are properly paired and closed in the correct order.
+
+**Logic Notes**
+*   **Optimization:** Uses a primitive `char[]` instead of `java.util.Stack` to avoid boxing/unboxing and object allocation overhead.
+*   **Early Exit:** Returns `false` immediately if string length is odd or if an illegal closing sequence is detected.
+*   **State Tracking:** The `top == -1` check at the end is critical to ensure no unmatched opening brackets remain in the stack.
+
+---
