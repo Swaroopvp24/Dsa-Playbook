@@ -1,4 +1,4 @@
-//Try 2 , pushing into same file name 
+//Try 3 , pushing into same file name 
 class Solution {
     public boolean hasDuplicate(int[] nums) {
         Arrays.sort(nums);
