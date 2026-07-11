@@ -34,3 +34,20 @@ Creates a new array that is the concatenation of the input array `nums` with its
 *   **Indexing Logic:** By using a single loop, you can map the index `i` from the original array to both `ans[i]` and `ans[i + n]` simultaneously, effectively filling both halves of the result array in one iteration.
 
 ---
+
+## array_join_attempt_1.java
+*Style: concise*
+
+### Notes: Array Concatenation
+
+#### Overview
+This code creates a new array that is the concatenation of the input array `nums` with itself. It returns a result of length `2n` where the original elements are duplicated into the first and second halves.
+
+#### Key Components
+*   **`getConcatenation(int[] nums)`**: The primary logic function. It allocates a result array of size `2 * nums.length` and performs a single-pass copy to populate both halves of the result.
+
+#### Key Logic
+*   **Single-Pass Efficiency**: Rather than using two separate loops or `System.arraycopy`, the code performs both assignments (`ans[i]` and `ans[i + n]`) within a single `O(n)` iteration, minimizing overhead.
+*   **Indexing**: The `ans[i + n]` index ensures that the second half of the output array is filled synchronously with the first half as the loop traverses the input.
+
+---
