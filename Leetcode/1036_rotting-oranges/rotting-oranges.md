@@ -55,3 +55,26 @@ If the input grid size is large and memory is constrained, consider packing two 
 *   **Queue Choice:** The use of `ArrayDeque` is strictly superior to `LinkedList` in Java for BFS, as `LinkedList` incurs higher overhead due to node object allocation for each entry.
 
 ---
+
+## attempt_1_modified.java
+*Style: concise*
+
+### Notes: Rotting Oranges (BFS)
+
+**Overview**
+Calculates the minimum time required for all fresh oranges to rot using a multi-source Breadth-First Search (BFS). Each minute represents one layer of expansion from all currently rotten oranges.
+
+**Key Components**
+*   **`Queue<int[]> queue`**: Stores coordinates of rotten oranges to process level-by-level.
+*   **`fresh` counter**: Tracks the count of fresh oranges; allows for $O(1)$ verification of completion at the end.
+*   **`dr`, `dc` arrays**: Standard directional vectors for grid traversal (up, down, left, right).
+
+**Logic to Remember**
+*   **Level-order BFS**: The `for (int i = 0; i < size; i++)` loop is critical—it ensures we increment the `min` timer only after all oranges at the current "minute" have finished infecting their neighbors.
+*   **State Mutation**: The input `grid` is updated in-place (changing `1` to `2`) to act as a "visited" set, saving space.
+*   **Corner Cases**:
+    *   No fresh oranges initially $\rightarrow$ returns `0`.
+    *   Fresh oranges exist but are unreachable (no initial rotten ones) $\rightarrow$ returns `-1`.
+    *   After BFS, if `fresh > 0`, some oranges were trapped $\rightarrow$ returns `-1`.
+
+---
