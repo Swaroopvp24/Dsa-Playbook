@@ -18,3 +18,23 @@ This code calculates the number of connected components of '1's (islands) in a 2
 *   **Connectivity**: The four-way movement logic ensures all contiguous '1's are identified as a single island during a single DFS recursion stack.
 
 ---
+
+## attempt_2.java
+*Style: concise*
+
+### Notes: Number of Islands (DFS)
+
+#### Overview
+This code calculates the number of connected components ("islands") in a 2D grid of '1's (land) and '0's (water). It uses a standard Depth-First Search (DFS) approach to traverse and mark all nodes belonging to the same island.
+
+#### Key Components
+*   **`numIslands(char[][] grid)`**: Iterates through every cell in the grid. Triggers a `dfs` call only when an unvisited land cell ('1') is encountered, incrementing the island counter.
+*   **`dfs(int row, int col, ...)`**: Recursively marks the current cell as visited and traverses adjacent cells (up, down, left, right) that are also land and unvisited.
+
+#### Logic Highlights
+*   **Traversal Pattern**: Uses direction arrays (`dr`, `dc`) to cleanly iterate through the 4-connectivity neighbors, avoiding redundant `if` or `switch` statements.
+*   **Space Complexity**: Uses an auxiliary `boolean[][]` array to track state. 
+    *   *Note:* Space can be optimized by mutating the input `grid` (replacing '1' with '0') if modification of the input is permissible.
+*   **Base Case**: The recursive structure relies on the boundary and "unvisited/is-land" checks within the loop to implicitly handle recursion termination.
+
+---
