@@ -61,3 +61,24 @@ While not explicitly implemented in this snippet, **sorting** the `candidates` a
 The line `res.add(new ArrayList<>(arr))` is computationally expensive as it performs an $O(k)$ copy operation (where $k$ is the current path length) every time a valid combination is found. In scenarios with a high density of valid combinations, this will become the primary performance bottleneck.
 
 ---
+
+## attempt_1_modified.java
+*Style: concise*
+
+### Study Notes: Combination Sum
+
+**Overview**
+This solution finds all unique combinations of an integer array that sum to a specific target. It uses backtracking to explore a decision tree where each element can be reused an unlimited number of times.
+
+**Key Components**
+*   `combinationSum`: Entry point; initializes the result list and triggers the recursive search.
+*   `comb`: A backtracking helper that traverses the candidates array. It manages the current path (`arr`) and the remaining `target`.
+
+**Logic & Observations**
+*   **Decision Branching:** The recursion explores two distinct choices at each index `idx`:
+    1.  Include the current candidate (keeping `idx` the same to allow reuse).
+    2.  Skip the current candidate (incrementing `idx` to move to the next).
+*   **State Management:** Standard backtracking pattern; the list `arr` is modified before the recursive call and restored (`remove(arr.size() - 1)`) afterward to backtrack effectively.
+*   **Efficiency:** Pruning occurs when `target < 0` or when we run out of candidates. If the input array is sorted, an additional check `c[idx] > target` could prune the search space earlier.
+
+---
