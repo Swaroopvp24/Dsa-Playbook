@@ -16,8 +16,8 @@ class Solution {
             result.add(new ArrayList<>(ds));
             return;
         }
-
-        for (int i = index; i <= n; i++) {
+        int remaining  =  k - ds.size();
+        for (int i = index; i <= n - remaining + 1; i++) {
             ds.add(i);
             generateCombinations(i + 1, ds);
             ds.remove(ds.size() - 1);
