@@ -53,3 +53,22 @@ While using a single `List` is memory efficient, Java's `ArrayList` resizing can
 *   **Concurrency:** The class is **not thread-safe** because it relies on instance-level fields (`result`, `n`, `k`) that are mutated during the `combine` method execution. If this class is used as a singleton in a multi-threaded environment, `combine` must be synchronized or the state must be moved to method-local variables.
 
 ---
+
+## attempt_1.java
+*Style: concise*
+
+### Study Notes: Combinations (Backtracking)
+
+#### Overview
+Generates all possible combinations of $k$ numbers chosen from the range $[1, n]$. Uses recursion with backtracking to explore state space.
+
+#### Key Components
+*   **`combine(n, k)`**: Initializes the result list and initiates the recursive backtracking process.
+*   **`generateCombinations(index, ds)`**: The core recursive function that builds combinations by adding integers and backtracking once a branch is exhausted or complete.
+
+#### Non-Obvious Logic
+*   **Loop Optimization (`n - remaining + 1`)**: Instead of iterating up to `n`, the loop terminates early if there aren't enough remaining numbers to fill the current combination. This significantly prunes the recursion tree.
+*   **State Management**: `ds.remove(ds.size() - 1)` ensures the state is cleaned up after returning from a recursive call, allowing the same `ArrayList` object to be reused across different paths.
+*   **Deep Copy**: `new ArrayList<>(ds)` is critical; since `ds` is passed by reference, the current state must be cloned before adding it to the result set.
+
+---
