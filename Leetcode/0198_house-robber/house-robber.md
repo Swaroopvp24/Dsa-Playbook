@@ -70,3 +70,24 @@ Calculates the maximum amount of money one can steal from a series of houses wit
 *   **Space Optimization:** Note that this can be further optimized to $O(1)$ space by using two integer variables (`prev1`, `prev2`) instead of a full `dp` array, as `dp[i]` only depends on the two preceding states.
 
 ---
+
+## tabulationandconstantspace.java
+*Style: concise*
+
+### House Robber (DP)
+
+#### Summary
+Implements a dynamic programming approach to find the maximum sum of non-adjacent elements in an array. It achieves $O(n)$ time complexity and $O(1)$ space complexity by tracking only the two preceding optimal states.
+
+#### Key Logic
+*   **`prev2`**: Max money robbed up to index $i-2$.
+*   **`prev1`**: Max money robbed up to index $i-1$.
+*   **State Transition**: `cur = Math.max(prev2 + nums[i], prev1)`
+    *   Either rob the current house (`nums[i]`) and add it to the best result from two houses back.
+    *   Or skip the current house and keep the best result from the previous house.
+
+#### Implementation Notes
+*   **Space Optimization**: Rather than maintaining a full DP array of size $n$, we only store the two most recent states to update the current maximum iteratively.
+*   **Base Cases**: Handle length 0 and 1 explicitly to avoid out-of-bounds errors before the loop begins.
+
+---
