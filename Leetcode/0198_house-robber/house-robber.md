@@ -50,3 +50,23 @@ The algorithm recursively decomposes the state space, caching results in a state
 *   **Sentinel Value Sensitivity:** Using `-1` as a cache miss indicator is robust here because house values are typically non-negative ($nums[i] \ge 0$). If the problem allowed negative values (e.g., "robbery costs"), `-1` would be a valid calculation result, and one would need a separate `boolean[] visited` array to track state computation.
 
 ---
+
+## tabulation.java
+*Style: concise*
+
+### House Robber (Dynamic Programming)
+
+**Summary**
+Calculates the maximum amount of money one can steal from a series of houses without robbing two adjacent ones. It solves the problem using an iterative DP approach with $O(n)$ time and space complexity.
+
+**Key Components**
+*   `dp[]`: Array where `dp[i]` stores the maximum profit achievable up to house `i`.
+*   `take`: The sum of the current house value and the max profit from two houses back (`dp[i-2]`).
+*   `notTake`: The max profit achieved by skipping the current house, carrying over the value from the previous house (`dp[i-1]`).
+
+**Logic Notes**
+*   **Base Cases:** Explicitly handle `length 0` and `1` to avoid `ArrayIndexOutOfBounds` exceptions during initialization.
+*   **Optimal Substructure:** At any index `i`, the decision is binary: either include the current house (and skip `i-1`) or exclude it (inheriting `i-1`).
+*   **Space Optimization:** Note that this can be further optimized to $O(1)$ space by using two integer variables (`prev1`, `prev2`) instead of a full `dp` array, as `dp[i]` only depends on the two preceding states.
+
+---
