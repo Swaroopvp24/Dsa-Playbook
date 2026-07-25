@@ -121,3 +121,25 @@ if (nums == null || nums.length <= 1) return;
 to ensure the method handles degenerate input cases safely.
 
 ---
+
+## reversesolusingtemp.java
+*Style: concise*
+
+### Array Rotation (Reversal Algorithm)
+
+**Purpose**
+Rotates an array `nums` to the right by `k` steps in $O(n)$ time and $O(1)$ space by leveraging block reversals.
+
+**Key Components**
+*   `rev(int[] arr, int st, int en)`: A helper utility that reverses a segment of the array in-place using two pointers.
+*   `rotate(int[] nums, int k)`: The driver method that manages the three-step reversal logic to achieve rotation.
+
+**Core Logic**
+*   **Modulo Operator:** `k = k % nums.length` is critical to handle cases where `k` exceeds the array length, avoiding redundant full cycles.
+*   **Reversal Pattern:** To rotate an array $[A][B]$ to become $[B][A]$:
+    1.  Reverse the whole array: $(A^R B^R)^R \rightarrow B A$.
+    2.  Reverse the first `k` elements to fix the order of block $B$.
+    3.  Reverse the remaining elements to fix the order of block $A$.
+*   **In-place efficiency:** This approach avoids auxiliary space allocation, making it optimal for memory-constrained environments.
+
+---
