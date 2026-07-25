@@ -69,3 +69,49 @@ This implementation calculates the maximum subarray sum using a modified Kadane�
 *   **Complexity**: $O(n)$ time complexity; $O(1)$ space complexity.
 
 ---
+
+## Kadane's_algorithm_print_array.java
+*Style: detailed*
+
+# Technical Deep-Dive: Kadane’s Algorithm Implementation
+
+## Summary
+The provided implementation solves the **Maximum Subarray Problem** using **Kadane’s Algorithm**, a dynamic programming approach that identifies the contiguous subarray within a one-dimensional numeric array that has the largest sum. 
+
+The algorithm operates on the principle that the maximum subarray ending at index `i` is either the element at `i` itself or the sum of the maximum subarray ending at `i-1` plus the element at `i`. By maintaining a running `sum` and resetting it to zero whenever it drops below zero (effectively discarding a prefix that would decrease the potential sum of future subarrays), the solution achieves linear time efficiency.
+
+## Complexity Analysis
+
+*   **Time Complexity: $O(n)$**
+    *   The algorithm utilizes a single pass over the input array of size `n`. 
+    *   The `if` logic inside the loop performs constant-time arithmetic and comparison operations.
+    *   The final `for` loop, used for printing, is bounded by the length of the identified subarray ($k \le n$), resulting in $O(n + k) \approx O(n)$.
+*   **Space Complexity: $O(1)$**
+    *   The algorithm uses a constant amount of extra space (`max`, `sum`, `st`, `ansst`, `ansend`) regardless of the input array size. No auxiliary data structures (like arrays or hash maps) are allocated.
+
+## Component Deep Dive
+
+### 1. The Greedy Reset Mechanism
+```java
+if (sum < 0) { sum = 0; }
+```
+This is the heart of Kadane’s logic. If the running `sum` becomes negative, any subarray starting before the current index will only diminish the sum of any subsequent subarray. Thus, we "reset" the window. 
+
+### 2. Boundary Tracking
+The implementation explicitly tracks indices `st`, `ansst`, and `ansend`:
+*   `st`: Monitors the potential beginning of a new subarray. It updates to `i` only when `sum` is reset to 0.
+*   `ansst`/`ansend`: These capture the definitive boundaries of the maximum sum window found so far, allowing for the subsequent print operation.
+
+### 3. Edge-Case Handling
+*   **Negative Arrays:** The initial value `max = -10001` (based on typical problem constraints where `nums[i] >= -10000`) correctly handles arrays containing only negative numbers. 
+*   **Single Element Arrays:** The logic gracefully handles single-element arrays; the loop executes once, updates `max`, and returns the element.
+*   **Empty Arrays:** While not explicitly guarded against (e.g., `nums.length == 0`), the code would return `-10001` and skip the print loop, which is technically safer than an `ArrayIndexOutOfBoundsException` but suggests a potential need for an initial `if (nums == null || nums.length == 0)` guard.
+
+## Key Insights & Nuances
+
+*   **The "Reset" Limitation:** The logic `if (sum == 0)` to set `st = i` is slightly fragile. If the array contains a sequence that sums to zero exactly (e.g., `[-1, 1]`), the logic might trigger resets in ways that don't capture the mathematically optimal start index if not carefully aligned with the `sum < 0` logic.
+*   **Output vs. Return:** The inclusion of `System.out.print` inside a method intended for competitive programming or library integration is a **side-effect anti-pattern**. In production systems, this should be refactored into a separate utility or the boundaries should be returned via a custom object/result array.
+*   **Initialization Constraints:** Using `-10001` as a sentinel value is risky. If the input array contains values smaller than -10,000, `max` will be initialized incorrectly. A more robust approach is to initialize `max = nums[0]` and start the loop from `i = 1`.
+*   **Performance Optimization:** The `System.out.print` inside the loop is an $O(k)$ operation that performs I/O. In high-frequency trading or performance-critical loops, I/O should be buffered or deferred to prevent system call overhead.
+
+---
