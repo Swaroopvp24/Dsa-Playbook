@@ -57,3 +57,67 @@ The algorithm maintains two pointers, `i` (index for `temp`) and `pt` (index for
     *   This check is essential for system stability.
 
 ---
+
+## threereverse.java
+*Style: detailed*
+
+# Deep-Dive Reference: Array Rotation via Reversal Algorithm
+
+## Summary
+The solution implements an **in-place array rotation** with $O(1)$ auxiliary space complexity. The core algorithmic technique relies on the properties of block transposition. Given an array divided into two parts $[A][B]$ (where $B$ is the suffix of length $k$), the goal is to transform it into $[B][A]$.
+
+The transformation sequence follows the algebraic logic:
+1. **Reverse Entire Array:** $(AB)^R = B^R A^R$
+2. **Reverse Sub-segments:** $(B^R)^R (A^R)^R = BA$
+
+This achieves the rotation without the $O(n)$ space overhead required by auxiliary buffers.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(n)$
+*   **Derivation:** The algorithm performs three distinct reversal passes.
+    *   Reversing the full array: $n/2$ swaps.
+    *   Reversing the first $k$ elements: $k/2$ swaps.
+    *   Reversing the remaining $n-k$ elements: $(n-k)/2$ swaps.
+*   **Total Operations:** $(n/2) + (k/2) + (n-k)/2 = n$ total swaps. Since each swap is $O(1)$, the total time complexity is strictly linear, $O(n)$.
+
+### Space Complexity: $O(1)$
+*   **Derivation:** The algorithm operates exclusively via in-place mutation of the input array. No additional data structures (like queues, stacks, or auxiliary arrays) are initialized. The memory footprint remains constant regardless of input size $N$.
+
+---
+
+## Component Deep Dive
+
+### 1. `rev(int[] arr, int st, int en)`
+This utility function implements a bidirectional two-pointer approach to reverse a slice of the array.
+*   **In-place Swapping:** The implementation uses the **XOR Swap Algorithm** (`a ^= b; b ^= a; a ^= b;`).
+    *   *Technical Note:* While mathematically elegant, this is primarily an educational exercise. In high-performance JVM environments, a temporary variable (`int temp = arr[st]`) is generally preferred. The JIT compiler optimizes temporary variables into CPU registers, whereas XOR swapping forces three sequential read-modify-write operations on the same memory locations, preventing instruction-level parallelism.
+
+### 2. `rotate(int[] nums, int k)`
+*   **Normalization:** `k = k % nums.length` is critical. If $k > n$, rotation effectively cycles. Modulo arithmetic ensures $k$ maps to the effective rotation index, preventing `ArrayIndexOutOfBoundsException` and redundant full-array cycles.
+*   **Boundary Conditions:**
+    *   **$k=0$:** If $k$ is 0, the logic still holds (reverses total array, then reverses $0$ to $-1$ which is a no-op, then reverses $0$ to $n-1$, returning to identity).
+    *   **$n=1$:** The logic handles single-element arrays gracefully as $k$ becomes $0$ and no swaps occur.
+
+---
+
+## Key Insights
+
+### The XOR Swap Trap
+The use of `a ^= b` creates a hidden dependency chain. In modern pipelined processors, `arr[st]` and `arr[en]` must be accessed sequentially. Using a temporary variable allows the CPU to potentially schedule the reads and writes more efficiently. Furthermore, if `st == en` (the middle element of an odd-length array), the XOR swap will **zero out** the value at that index.
+*   *Correction:* While your `while (st < en)` guard prevents this, it is a fragile design pattern. If the boundary condition were ever changed to `st <= en`, the algorithm would corrupt the data.
+
+### Numerical Stability & Constraints
+*   **Integer Overflow:** The current implementation is safe as it does not perform arithmetic on values, only indices.
+*   **Large Inputs:** For extremely large arrays, the constant factor overhead of three passes is significantly lower than $O(n)$ space allocations, making this the preferred approach for memory-constrained systems (e.g., embedded devices or high-frequency trading buffer rotations).
+
+### Potential Edge Case Failure
+If `nums` is `null` or empty, `k % nums.length` will throw an `ArithmeticException`. A robust production implementation must include:
+```java
+if (nums == null || nums.length <= 1) return;
+```
+to ensure the method handles degenerate input cases safely.
+
+---
