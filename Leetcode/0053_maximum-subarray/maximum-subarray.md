@@ -50,3 +50,22 @@ By updating `max` *before* resetting `sum` to 0, the algorithm preserves the abi
 While this implementation is $O(n)$, a Divide and Conquer approach would yield $O(n \log n)$. Kadane’s is strictly superior in both time and space for this specific problem, making it the preferred solution for system-level implementations where latency is critical.
 
 ---
+
+## attempt_2.java
+*Style: concise*
+
+### Notes: Maximum Subarray (Kadane’s Variation)
+
+**Overview**
+This implementation calculates the maximum subarray sum using a modified Kadane’s algorithm. It handles arrays containing both positive and negative integers by tracking a running sum and updating the global maximum accordingly.
+
+**Key Components**
+*   `maxSubArray`: Tracks the current running sum of the subarray. Resets to 0 if the sum drops below zero.
+*   `ans`: Stores the global maximum sum encountered.
+
+**Logic & Observations**
+*   **Initialization**: `ans` is initialized to `nums[0]` rather than `0` to correctly handle arrays consisting entirely of negative numbers.
+*   **Negative Number Handling**: Inside the reset block (`maxSubArray < 0`), `ans` is updated with `Math.max(ans, nums[i])`. This is critical: if all numbers are negative, the algorithm ignores the "reset to 0" logic for the current element and correctly identifies the largest single negative value.
+*   **Complexity**: $O(n)$ time complexity; $O(1)$ space complexity.
+
+---
