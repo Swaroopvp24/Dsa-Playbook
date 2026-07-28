@@ -103,3 +103,55 @@ The provided code includes a `sub` function, which represents the **Top-Down Mem
 *   **Subtle Bug Warning**: Note the off-by-one indexing. `s1` and `s2` are 0-indexed, but the `dp` table is 1-indexed (to handle the base case). Accessing `s1[i-1]` is crucial; attempting to access `s1[i]` inside the loops will result in an `ArrayIndexOutOfBoundsException` at the end of the iterations.
 
 ---
+
+## attempt_3_reducedspace.java
+*Style: detailed*
+
+# Technical Reference: Longest Common Subsequence (LCS) Implementation
+
+## 1. Summary
+The implementation provides two approaches for solving the Longest Common Subsequence problem: a **Recursive approach with Memoization** (provided in the `sub` method) and a **Space-Optimized Bottom-Up Dynamic Programming** approach (provided in `longestCommonSubsequence`).
+
+The core logic relies on the optimal substructure property of the LCS problem:
+- If characters match: `1 + LCS(s1[0..i-1], s2[0..j-1])`
+- If characters mismatch: `max(LCS(s1[0..i-1], s2[0..j]), LCS(s1[0..i], s2[0..j-1]))`
+
+The primary implementation effectively transforms the standard $O(N \times M)$ space complexity into $O(M)$ by leveraging the observation that computing the current row in the DP table only requires the immediate predecessor row.
+
+---
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(N \times M)$
+*   **Why:** The bottom-up implementation uses a nested loop where $i$ iterates from $1$ to $N$ and $j$ iterates from $1$ to $M$. Each cell in the conceptual $N \times M$ DP matrix is visited exactly once, with $O(1)$ operations performed at each step (comparisons and assignments).
+
+### Space Complexity: $O(M)$
+*   **Why:** The initial recursive approach requires $O(N \times M)$ for the memoization table. However, the final iterative implementation uses two arrays (`prev` and `cur`), each of size $M+1$. This reduces space from quadratic to linear relative to the second input string.
+*   **Note:** The current `cur = new int[n2]` inside the loop creates a new allocation every iteration, effectively keeping it $O(M)$ but increasing GC pressure.
+
+---
+
+## 3. Component Deep Dive
+
+### Space-Optimized DP (`longestCommonSubsequence`)
+*   **State Transition:** 
+    *   `cur[j] = 1 + prev[j-1]` when `s1[i-1] == s2[j-1]`.
+    *   `cur[j] = Math.max(prev[j], cur[j-1])` when characters differ.
+*   **Array Swapping:** The implementation uses `prev = cur` followed by `cur = new int[n2]`. While memory-safe, a more performant approach would be to toggle between two arrays or use a single array update pattern (overwriting values) to avoid constant allocation/deallocation overhead.
+*   **Initialization:** The first row and column are correctly initialized to $0$ to represent the base case where one of the strings is empty, resulting in an LCS of length $0$.
+
+### Memoized Recursion (`sub`)
+*   **Structure:** This is a top-down approach. It checks the cache (`dp[i][j] != -1`) before performing recursion.
+*   **Base Case:** Returns `0` if `i` or `j` indices go below $0$. 
+*   **Constraint Warning:** In Java, this recursive approach risks a `StackOverflowError` for very long strings because the call stack depth will reach $\max(N, M)$. For production-grade systems, the iterative approach is strictly preferred for large input sizes.
+
+---
+
+## 4. Key Insights
+
+*   **GC Pressure:** In the line `cur = new int[n2];`, the code allocates a new array on every iteration of the outer loop. In performance-critical hot paths, this should be replaced with `Arrays.fill(cur, 0)` or a two-row toggle using `int[][] temp = prev; prev = cur; cur = temp;`.
+*   **Off-by-One Handling:** The implementation uses `n1 = st1.length() + 1` and iterates up to `n1`, but indexes characters at `s1[i-1]`. This is a clean way to handle the "empty prefix" boundary condition without index out-of-bounds errors.
+*   **Optimization Nuance:** While $O(M)$ space is achieved, the time complexity remains dominated by the $N \times M$ comparisons. It is impossible to solve the standard LCS problem in sub-quadratic time for arbitrary strings, though bit-parallelism (e.g., Bitap algorithm) can yield significant speedups in practice for specific character sets.
+*   **Subtle Bug:** The `sub` method expects a `dp` table populated with `-1`. However, the calling method `longestCommonSubsequence` initializes `dp` with default `0` values. If the recursive method were used directly without re-initializing the `dp` table to `-1`, the function would return incorrect results because it would treat the `0` from the empty cells as valid calculated LCS values.
+
+---
