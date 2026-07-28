@@ -62,3 +62,43 @@ The final result is stored in the last element of the `prev` array, `prev[n2 - 1
 *   **Input Validation**: The code assumes that the input string `st1` is non-null and non-empty. Adding input validation checks can help prevent `NullPointerExceptions` and ensure the solution handles edge cases correctly.
 
 ---
+
+## attempt_2.java
+*Style: detailed*
+
+### Solution Overview
+#### Summary
+The provided Java solution employs dynamic programming to find the length of the longest common subsequences between a given string and its reverse. This approach leverages the fact that the longest palindromic subsequence in a string will be equivalent to the longest common subsequence between the original string and its reverse.
+
+The algorithmic technique used here is a variant of the dynamic programming approach for the Longest Common Subsequence (LCS) problem. It initializes a 2D array `dp` to store the lengths of LCS for subproblems and iteratively fills this table by comparing characters from the two strings. The `rev` function reverses the input string, and `longestPalindromeSubseq` function computes the length of the longest palindromic subsequence.
+
+### Complexity Analysis
+#### Time Complexity
+The time complexity of the solution is **O(n*m)**, where `n` and `m` are the lengths of the input strings, which in this case are the same since we're comparing a string with its reverse. The nested loop structure, where we iterate over the characters of both strings once, leads to this quadratic time complexity.
+
+#### Space Complexity
+The space complexity is also **O(n*m)**, primarily due to the 2D `dp` array used for storing the lengths of LCS for subproblems. The space required to store the input strings and other variables is negligible compared to the space needed for the `dp` array.
+
+### Component Deep Dive
+#### Critical Functions
+- `rev(String s)`: This function takes a string `s` as input and returns its reverse. It uses `StringBuilder` for efficient string reversal.
+- `longestPalindromeSubseq(String st1)`: This function computes the length of the longest palindromic subsequence within `st1`.
+  - It first reverses `st1` to get `st2`.
+  - Initializes a 2D `dp` array of size `[n1+1][n2+1]` where `n1` and `n2` are lengths of `st1` and `st2` respectively.
+  - Fills the first row and column of `dp` with zeros, which corresponds to base cases where one of the strings is empty.
+  - Then, it iterates over the characters of both strings. If the characters at the current positions `i-1` and `j-1` match, it updates `dp[i][j]` as `1 + dp[i-1][j-1]`, reflecting the addition of a matched character to the LCS. If the characters do not match, it updates `dp[i][j]` as the maximum of `dp[i-1][j]` and `dp[i][j-1]`, which corresponds to ignoring the current character in either string and considering the LCS of the remaining parts.
+
+#### Data Structures
+- `dp` array: A 2D array used to store the lengths of LCS for subproblems. It's the core data structure that facilitates the dynamic programming approach.
+- `StringBuilder`: Used for efficient string reversal in the `rev` function.
+
+#### Edge-Case Handling
+- The solution implicitly handles edge cases, such as an empty input string, by initializing the first row and column of the `dp` array with zeros. This ensures that when the input strings are empty, the function correctly returns 0, as there are no characters to form any palindromic subsequences.
+
+### Key Insights
+- **Dynamic Programming Approach**: The solution leverages the power of dynamic programming to avoid redundant computation and achieve efficiency. The `dp` array stores solutions to subproblems, allowing the algorithm to compute the solution to the original problem by combining these stored solutions.
+- **String Reversal**: The use of `StringBuilder` for string reversal is efficient because it avoids creating unnecessary temporary strings, reducing memory allocation and garbage collection overhead.
+- **Initialization of dp Array**: Correct initialization of the `dp` array with base case values (zeros for the first row and column) is crucial for the dynamic programming approach to work correctly.
+- **Performance Optimization**: The algorithm has a time complexity of O(n^2) due to the nested loop structure, which is optimal for this problem since we must compare each character of the string with potentially every character of its reverse. However, using a dynamic programming approach significantly reduces the computational complexity compared to a naive recursive approach without memoization.
+
+---
