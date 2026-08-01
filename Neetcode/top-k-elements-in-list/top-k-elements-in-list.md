@@ -65,3 +65,60 @@ The code contains a commented-out block that attempts to cap the heap size at $K
 *   **Input Validation:** The code assumes $K$ is valid. Add a check `if (k == 0 || nums == null)` to prevent `NullPointerException` or unexpected array sizing.
 
 ---
+
+## attempt_2_minHeap.java
+*Style: detailed*
+
+# Engineering Reference: Top K Frequent Elements
+
+## 1. Summary
+The solution employs a **Frequency Map + Min-Heap** approach to solve the Top-K problem. By decoupling the counting process from the selection process, the algorithm transforms an $O(N \log N)$ sorting problem into an $O(N \log K)$ selection problem. The Min-Heap serves as a sliding window of size $K$ that maintains the highest frequency elements encountered so far, effectively evicting the "least frequent of the top-K" elements whenever the heap capacity is exceeded.
+
+---
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(N \log K)$
+*   **Counting Phase ($O(N)$):** We iterate through the input array once to populate the `HashMap`. Each insertion/update is $O(1)$ on average.
+*   **Heap Phase ($O(M \log K)$):** We iterate over the $M$ unique elements in the map. For each element, we perform an `offer` and potentially a `poll` operation on the heap. Since the heap size is capped at $K$, each operation is $O(\log K)$.
+*   **Total:** $O(N + M \log K)$. In the worst case where $M \approx N$, this simplifies to **$O(N \log K)$**.
+
+### Space Complexity: $O(N)$
+*   **Frequency Map ($O(M)$):** Stores up to $M$ unique elements where $M \le N$.
+*   **Heap ($O(K)$):** The heap contains exactly $K$ elements at the steady state.
+*   **Total:** **$O(N)$** space to store the frequency mapping.
+
+---
+
+## 3. Component Deep Dive
+
+### Frequency Mapping (`HashMap<Integer, Integer>`)
+*   **Purpose:** Aggregates element counts.
+*   **Constraint Handling:** The use of `getOrDefault(n, 0) + 1` is standard. For massive datasets, one might consider a primitive map (e.g., fastutil or Koloboke) to avoid `Integer` object overhead and boxing/unboxing latency.
+
+### Min-Heap (`PriorityQueue`)
+*   **Mechanism:** Initialized with a custom comparator `(a, b) -> Integer.compare(a[1], b[1])`.
+*   **Why Min-Heap?** A Min-Heap of size $K$ ensures that the root of the heap is always the element with the *smallest frequency among the top-K candidates*. When a new element is processed that has a higher frequency than the current root, the root is discarded (`poll`). This maintains the "Top K" invariant efficiently.
+
+### Edge Case Handling
+*   **$K = N$:** The heap will store all unique elements. The algorithm gracefully handles this, though performance degrades to $O(N \log N)$ because the heap grows to $N$.
+*   **Input Array size $1$:** The code correctly handles single-element arrays with no heap overflow logic trigger.
+*   **Tie-breaking:** The current implementation doesn't specify behavior for identical frequencies. Given the nature of `PriorityQueue`, the eviction order for equal frequencies is non-deterministic (based on heap structure), which is generally acceptable for this problem definition.
+
+---
+
+## 4. Key Insights
+
+### Performance Optimization: The "Bucket Sort" Alternative
+While the $O(N \log K)$ approach is robust, it can be optimized to **$O(N)$** using a **Bucket Sort (Frequency Array)** strategy:
+1. Create an array of lists `List<Integer>[] buckets = new List[nums.length + 1]`.
+2. Map frequencies to indices in the bucket array (where `index` is the frequency).
+3. Iterate from the back of the bucket array to pick the top $K$ elements.
+*   *Trade-off:* The bucket sort approach improves time complexity to linear time but requires $O(N)$ additional space for the bucket structures, which can be memory-intensive if the range of frequencies is sparse.
+
+### Implementation Nuances
+*   **Memory Pressure:** Using `new int[] {entry.getKey(), entry.getValue()}` creates $M$ small objects. In memory-constrained environments, this can trigger frequent GC cycles.
+*   **Generics:** The `PriorityQueue<int[]>` approach is clean but involves primitive boxing within the array. Ensuring the heap comparator strictly uses index `[1]` (the frequency) is critical. If one were to sort by value (`[0]`) by mistake, the logic would collapse into an arbitrary selection rather than frequency-based.
+*   **Stability:** If the problem required preserving the relative order of elements with the same frequency (e.g., "return elements in order of appearance"), this specific `PriorityQueue` implementation would require an additional metadata field to track original indices, as the current structure loses the arrival sequence.
+
+---
