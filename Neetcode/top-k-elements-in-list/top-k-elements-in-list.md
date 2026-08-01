@@ -122,3 +122,53 @@ While the $O(N \log K)$ approach is robust, it can be optimized to **$O(N)$** us
 *   **Stability:** If the problem required preserving the relative order of elements with the same frequency (e.g., "return elements in order of appearance"), this specific `PriorityQueue` implementation would require an additional metadata field to track original indices, as the current structure loses the arrival sequence.
 
 ---
+
+## BucketSort.java
+*Style: detailed*
+
+# Engineering Deep Dive: Bucket Sort Approach for Top-K Frequent Elements
+
+## 1. Summary
+The provided solution utilizes the **Bucket Sort** (or Distribution Sort) algorithm to achieve $O(n)$ time complexity, bypassing the $O(n \log n)$ or $O(n \log k)$ overhead associated with traditional sorting or heap-based solutions.
+
+The strategy maps the frequency of elements (the value) to the index of a pre-allocated array of lists (the bucket). Since the maximum possible frequency of any element is $n$ (the length of the input array), an array of lists of size $n+1$ is sufficient to group all elements by their respective occurrences. We then traverse this array in reverse (highest frequency first) to extract the top $k$ elements.
+
+---
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(n)$
+*   **Counting:** Iterating through the input array to populate the `HashMap` takes $O(n)$.
+*   **Bucketing:** Iterating through the $m$ unique elements in the `HashMap` to populate the `freq` array takes $O(m)$, where $m \leq n$.
+*   **Collection:** Traversing the `freq` array takes $O(n)$ because the total number of elements across all buckets is exactly $n$.
+*   **Total:** $O(n + m + n) \approx O(n)$.
+
+### Space Complexity: $O(n)$
+*   **HashMap:** Stores $m$ unique elements, taking $O(m)$ space.
+*   **Bucket Array:** The `freq` array is size $n+1$. In the worst case (all unique elements), the list overhead and object storage result in $O(n)$ space.
+*   **Total:** $O(n)$.
+
+---
+
+## 3. Component Deep Dive
+
+### The `freq` Array: `List<Integer>[] freq = new List[n + 1]`
+This is a **Frequency Distribution Map**. 
+*   **Why $n+1$?** An element can appear anywhere from 1 to $n$ times. Index 0 is ignored (as an element cannot appear 0 times in the input), and indices $1 \dots n$ represent the frequency count.
+*   **Design Choice:** Using an array of lists handles potential "collisions" where multiple distinct numbers have the exact same frequency. The `List` effectively acts as a bucket for those ties.
+
+### Implementation Nuances
+1.  **Initialization:** The loop `for (int i = 0; i <= n; i++) freq[i] = new ArrayList<>();` is critical. In Java, an array of generic types (or `List`) is initialized with `null` values. Attempting to add an element to `freq[i]` without explicit instantiation will result in a `NullPointerException`.
+2.  **Reverse Traversal:** The collection phase `for (int i = freq.length - 1; i > 0; i--)` naturally enforces the "top" requirement. By iterating from the highest index downwards, we ensure that higher frequency items are processed before lower frequency ones.
+3.  **Early Exit:** The `if (index == k) return res;` guard ensures we do not perform unnecessary operations once the result buffer is full, providing a minor constant-time optimization.
+
+---
+
+## 4. Key Insights & Considerations
+
+*   **Memory Overhead of `ArrayList`:** While $O(n)$ in complexity, Java’s `ArrayList` incurs object metadata overhead. For extremely large datasets with high cardinality, initializing thousands of `ArrayList` instances can lead to heap pressure. If memory is a hard constraint, consider a primitive-based linked-list approach using two arrays: `next[n]` and `head[n+1]`.
+*   **The "All Unique" Edge Case:** If all elements are unique, each list in `freq` will contain exactly one item. The logic holds, and performance remains linear, proving the robustness of the distribution sort.
+*   **Performance vs. Heap:** A common alternative is using a `PriorityQueue` (Min-Heap) of size $k$. That approach is $O(n \log k)$. This Bucket Sort approach is theoretically superior for large $n$. However, it requires $O(n)$ extra space, whereas a Min-Heap approach can technically be optimized to $O(k)$ space if the counting is done via a stream or external storage, though usually, the counting phase dominates space regardless.
+*   **Compiler/Runtime Note:** Java does not support direct generic array creation (`new List<Integer>[n+1]`) due to type erasure. The code uses `new List[n+1]` which triggers an unchecked warning, but is standard practice in Java for this pattern. Ensure `List` is raw-typed to avoid compile-time errors.
+
+---
