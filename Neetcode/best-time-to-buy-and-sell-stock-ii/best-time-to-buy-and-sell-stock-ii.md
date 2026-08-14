@@ -57,3 +57,25 @@ While this implementation uses DP, the problem "Best Time to Buy and Sell Stock 
 The inner loop `canBuy < 2` is small enough that the JVM likely unrolls these operations, making it extremely efficient. However, if this were to be ported to a system with constrained memory, the `dp[n+1][2]` allocation is the primary bottleneck. Reducing this to two local variables is the recommended path for production-level optimization.
 
 ---
+
+## same sol.java
+*Style: concise*
+
+### Stock Profit Calculation (Dynamic Programming)
+
+**Summary**
+This code calculates the maximum profit from an array of stock prices (allowing multiple transactions) using bottom-up dynamic programming. It models the problem as a state machine where you decide whether to buy, sell, or hold at each index.
+
+**Key Components**
+*   `dp[n+1][2]`: A memoization table where the first dimension is the current day (`ind`) and the second is the state `canBuy` (1 = can buy, 0 = must sell).
+*   **State Transitions:**
+    *   If `canBuy == 1`: Choose between buying (`-prices[ind] + dp[ind+1][0]`) or skipping (`0 + dp[ind+1][1]`).
+    *   If `canBuy == 0`: Choose between selling (`prices[ind] + dp[ind+1][1]`) or skipping (`0 + dp[ind+1][0]`).
+
+**Logic Notes**
+*   **Base Case:** `dp[n][...]` is initialized to 0, representing zero profit once no more days remain.
+*   **State Definition:** `canBuy = 1` means you currently do not hold stock and are eligible to purchase; `canBuy = 0` means you hold stock and are looking to sell.
+*   **Return Value:** The code returns `dp[0][1]` because the initial state at day 0 is having no stock, thus being in the "can buy" state. 
+*   **Optimization Tip:** This approach can be space-optimized to $O(1)$ by only keeping track of the `previous` day's values, as each state only depends on `ind + 1`.
+
+---
