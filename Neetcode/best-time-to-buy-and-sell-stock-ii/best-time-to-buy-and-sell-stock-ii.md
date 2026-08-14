@@ -140,3 +140,50 @@ The variables `next0` and `next1` are updated *within* the loop that calculates 
 *   And later used `next0` in the *same* index pass, you are effectively using the "future" state (`i`) for the calculation of the current state. While mathematically valid for this specific recurrence due to the independence of the two states within a single day, this pattern is dangerous. **Best practice:** Always use temporary variables (e.g., `curr0`, `curr1`) to buffer state updates before committing them to the "next" variables to prevent unintentional cross-pollination of states.
 
 ---
+
+## greedy_solution.java
+*Style: detailed*
+
+# Deep-Dive Reference: Greedy Maximum Profit Algorithm
+
+## 1. Summary
+The provided solution implements a **Greedy Strategy** to solve the "Best Time to Buy and Sell Stock II" problem. By leveraging the mathematical property that any price sequence can be decomposed into a sum of local directional movements, the algorithm captures the maximum possible profit.
+
+Instead of attempting to find global minima and maxima (which would require a different approach or multiple passes), this algorithm calculates the **discrete derivative** of the price array. By summing only the positive increments ($P_{i+1} - P_i > 0$), we effectively capture every "upward slope" in the price trajectory, which is equivalent to holding the stock during every profitable interval.
+
+---
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(n)$
+*   **Reasoning:** The algorithm performs a single linear scan of the input array `prices` of length $n$. Each comparison and arithmetic operation is $O(1)$. We perform exactly $n-1$ iterations.
+*   **Constant Factors:** The loop terminates at `prices.length - 1` to prevent an `ArrayIndexOutOfBoundsException` when accessing `i + 1`.
+
+### Space Complexity: $O(1)$
+*   **Reasoning:** The algorithm utilizes a constant amount of auxiliary space. Only a single integer variable `profit` is maintained. No additional data structures (heaps, stacks, or dynamic programming tables) are allocated.
+
+---
+
+## 3. Component Deep Dive
+
+### The Greedy Transition Rule
+The core logic `if (prices[i + 1] > prices[i]) profit += prices[i + 1] - prices[i]` relies on the **transitive property of profit**. 
+*   If prices are $[1, 2, 3]$, the algorithm calculates $(2-1) + (3-2) = 2$.
+*   This is mathematically identical to buying at $1$ and selling at $3$ ($3-1 = 2$). 
+*   **Why this works:** By summing individual increments, we bypass the need to define specific "buy" and "sell" days. Every time a profit can be made overnight, we "take" it. If the price continues to rise, we effectively "held" through it; if it drops, we "sold" at the peak.
+
+### Boundary Conditions & Edge Cases
+*   **Empty or Single-Element Arrays:** If `prices.length` is 0 or 1, the loop condition `i < prices.length - 1` is immediately false. The function correctly returns `profit = 0`.
+*   **Monotonically Decreasing Prices:** If prices are $[5, 4, 3, 2, 1]$, the condition `prices[i+1] > prices[i]` is never met. The function returns $0$, which is the optimal profit for a bearish market.
+*   **Integer Overflow:** While not explicitly handled in the provided code, in production systems with extremely high prices and large array sizes, the `profit` accumulator could theoretically exceed `Integer.MAX_VALUE`. A more robust implementation might require `long` for the return type.
+
+---
+
+## 4. Key Insights
+
+*   **The "Valley-Peak" Fallacy:** A common pitfall for developers is trying to implement a "Find Valley, then find Peak" strategy using two pointers. While valid, that approach is significantly more complex to implement correctly (handling plateaus and last-element peaks). This greedy approach simplifies the logic to a single-pass summation.
+*   **Implicit Holding:** This algorithm does not actually track the state of the "portfolio." It ignores the physical constraint of needing to sell before buying again, because in the context of this specific problem (unlimited transactions), the continuous daily capture of positive delta is mathematically equivalent to intermittent trades.
+*   **Memory Efficiency:** Because this solution is $O(1)$ space, it is highly cache-friendly. The input array is read sequentially, ensuring maximum utilization of CPU L1/L2 cache lines compared to non-linear access patterns.
+*   **Optimization Nuance:** While this is optimal in terms of Big-O, for extremely large datasets, this could be vectorized using SIMD (Single Instruction, Multiple Data) instructions, as the condition `prices[i+1] - prices[i]` is a standard subtraction operation that can be performed in parallel across multiple elements.
+
+---
