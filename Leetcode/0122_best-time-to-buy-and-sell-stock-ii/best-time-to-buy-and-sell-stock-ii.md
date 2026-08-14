@@ -63,3 +63,23 @@ This reduces the auxiliary space from $O(N)$ to $O(1)$ without altering the time
 Note the initialization `dp[n][0] = 0` and `dp[n][1] = 0`. This correctly represents the **Base Case**: if there are no more days to trade, the future profit from that point forward is zero. If this were a variation like "Total transactions capped at K," initializing these to a very small negative number (representing impossibility) would be critical to prevent incorrect logic.
 
 ---
+
+## attempt_1_dpspaceoptimized.java
+*Style: concise*
+
+### Stock Profit Optimization (DP Space-Optimized)
+
+**Summary**
+This solution calculates the maximum profit from an unlimited number of stock transactions (Buy/Sell) using space-optimized dynamic programming. It tracks the state across days by iterating backward, maintaining only the results of the subsequent day to determine the current state.
+
+**Key Logic**
+*   `next1` (canBuy = 1): Represents the state where you are ready to buy. Profit is `max(-price + next0, next1)`.
+*   `next0` (canBuy = 0): Represents the state where you are holding a stock. Profit is `max(price + next1, next0)`.
+*   **State Transition**: The algorithm uses space optimization, reducing $O(N)$ space to $O(1)$ by replacing the DP table with two variables (`next0`, `next1`) representing the "next day" values.
+
+**Non-Obvious Notes**
+*   **Return State**: `return next1` is correct because it represents the profit starting from day 0, where `canBuy` is true (you have 0 stock).
+*   **Update Order**: The inner loop updates `next1` and `next0` sequentially; the order is safe here because the `canBuy` states for the current day only depend on the `next` day's values, not the current day's intermediate results.
+*   **Complexity**: $O(N)$ time, $O(1)$ auxiliary space.
+
+---
