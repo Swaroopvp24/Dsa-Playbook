@@ -49,3 +49,59 @@ The code handles duplicates at two levels:
 *   **Input Modification:** This algorithm modifies the input array via `Arrays.sort()`. In production systems, if the original array order must be preserved, a defensive copy (`nums.clone()`) is mandatory, though this increases space complexity to $O(n)$.
 
 ---
+
+## standard_solution_using threeloops(two_for_and_one_twopointerwhile_loops).java
+*Style: detailed*
+
+# Technical Reference: K-Sum (Quadruplet) Optimization
+
+## Summary
+The provided solution addresses the 4-Sum problem using a **nested two-pointer strategy** atop a sorted array. By sorting the input ($O(N \log N)$), we reduce the search space for the final two elements to a linear scan, effectively lowering the complexity from the brute-force $O(N^4)$ to $O(N^3)$. The algorithm systematically fixes two indices and performs a two-pointer narrowing search on the remaining subarray to find complements that satisfy the target equation.
+
+## Complexity Analysis
+
+### Time Complexity: $O(N^3)$
+*   **Sorting:** $O(N \log N)$ preprocessing step.
+*   **Nested Loops:** The first two loops iterate $N$ and $N-1$ times respectively.
+*   **Two-Pointer Scan:** Inside the second loop, the `left` and `right` pointers traverse the remaining subarray in $O(N)$ time.
+*   **Total:** $O(N \log N + N^2 \times N) = O(N^3)$.
+
+### Space Complexity: $O(1)$ to $O(N)$ (excluding output)
+*   The algorithm operates in-place on the sorted array. 
+*   **Auxiliary Space:** $O(1)$ if the sorting algorithm (e.g., Dual-Pivot Quicksort used by `Arrays.sort`) is considered in-place. Note that the stack space for sorting can reach $O(\log N)$ or $O(N)$ depending on the implementation. The returned list of lists is excluded from this complexity analysis.
+
+---
+
+## Component Deep Dive
+
+### 1. Duplicate Suppression Logic
+The algorithm employs three distinct checks to ensure set uniqueness in the result:
+*   **Outer Loops:** `if (i > 0 && nums[i] == nums[i-1]) continue;` prevents selecting the same value for the same loop position across subsequent iterations.
+*   **Inner Pointer Contraction:** After finding a match, the `while` loops skip adjacent identical values for `left` and `right`. This is crucial because, in a sorted array, identical values are grouped; incrementing/decrementing pointers simply passes over redundant combinations that would result in duplicate quadruplets.
+
+### 2. Overflow Mitigation
+The solution explicitly casts `nums[i]` to `long` before summation:
+```java
+long sum = (long) nums[firstInd] + nums[secondInd] + nums[left] + nums[right];
+```
+This is a critical production-grade consideration. Even if `nums[i]` are within the range of `int`, the sum of four large integers can easily exceed $2^{31}-1$. Without the cast, the JVM would perform 32-bit signed integer addition, leading to silent overflow and logical failure.
+
+### 3. Pointer Dynamics
+The `left` and `right` pointers effectively reduce the 4-sum problem to a 2-sum problem with a fixed sum (`target - nums[firstInd] - nums[secondInd]`). The convergence logic `sum > target` (decrement `right`) vs `sum < target` (increment `left`) is only valid because the array is sorted.
+
+---
+
+## Key Insights
+
+### Performance Nuance: Search Space Pruning
+While the provided code uses the standard approach, it can be further optimized by introducing **"early-exit" and "skip" heuristics** to prune branches that cannot possibly satisfy the target:
+*   **Early Exit:** If `nums[i] + 3 * nums[i+1] > target`, we can break the outer loop as all subsequent quadruplets will exceed the target.
+*   **Early Skip:** If `nums[i] + 3 * nums[n-1] < target`, we can `continue` the outer loop as the largest possible quadruplet starting with `nums[i]` is still too small.
+
+### The "Sort Trap"
+Sorting is a non-negotiable prerequisite. Without it, the greedy pointer movement (increment/decrement) lacks the property of monotonicity required to satisfy the logic. A common subtle bug in interview environments is attempting to use a `HashSet` to store intermediate sums for 4-Sum—while that would reduce complexity to $O(N^2)$, it significantly increases memory overhead and complicates the logic for ensuring quadruplet uniqueness compared to the sorted pointer approach.
+
+### Memory Safety
+The code relies on `Arrays.sort`. For extremely large arrays, be wary of the stack depth of `Arrays.sort` (if implemented via Quicksort), although standard JDK implementations optimize this heavily. If dealing with real-time constrained systems, a primitive heap-sort would guarantee $O(1)$ space complexity for sorting.
+
+---
