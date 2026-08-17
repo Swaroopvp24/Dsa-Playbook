@@ -58,3 +58,54 @@ If `people.length == 1`, the `while` loop condition `l < r` fails immediately. T
 Mutating the input array (`people[l] = -1`) is efficient for space but violates functional programming principles. In a production environment with multi-threaded access to the input array, this side effect could cause data races. If the array must be preserved, an $O(N)$ copy is required, increasing space complexity to $O(N)$.
 
 ---
+
+## standard_two_pointer_optimal.java
+*Style: detailed*
+
+# Engineering Deep-Dive: Rescue Boat Optimization
+
+## Summary
+The problem is a variation of the **Bin Packing Problem** with a constraint of at most two items per bin. Given that we can only pair at most two people per boat, we utilize a **Greedy Two-Pointer approach**. By sorting the weights, we pair the lightest person (`l`) with the heaviest person (`r`). If they fit within the `limit`, they share a boat. If they do not, the heaviest person must occupy a boat alone, as no one else is light enough to accompany them. This approach ensures that we minimize the total number of boats by maximizing the occupancy of each boat relative to the capacity constraint.
+
+## Complexity Analysis
+
+### Time Complexity: $O(N \log N)$
+*   **Sorting:** The `Arrays.sort()` implementation in Java (Dual-Pivot Quicksort for primitives) dominates the execution time, resulting in $O(N \log N)$.
+*   **Two-Pointer Traversal:** The `while` loop iterates through the array exactly once, visiting each element at most once. This portion is $O(N)$.
+*   **Total:** $O(N \log N + N) \approx \mathbf{O(N \log N)}$.
+
+### Space Complexity: $O(\log N)$ to $O(N)$
+*   Depending on the JDK implementation of `Arrays.sort()`, the space complexity for the sorting algorithm typically ranges from $O(\log N)$ to $O(N)$ due to stack recursion or auxiliary buffers. The pointer variables themselves are $O(1)$.
+
+## Component Deep Dive
+
+### 1. Sorting Strategy
+The efficacy of the greedy choice depends entirely on the sorted order. By sorting ascendingly, we establish a monotonic relationship where `people[r]` is the most difficult element to pair. The strategy of "heaviest + lightest" is optimal because:
+*   If the heaviest person (`r`) cannot pair with the lightest person (`l`), they cannot pair with *anyone* in the array. 
+*   Therefore, `r` must be decremented alone (creating a new boat).
+
+### 2. The Two-Pointer Logic
+```java
+while (l <= r) {
+    if (people[l] + people[r] <= limit) {
+        l++; // Lightest person is "rescued" with the heaviest
+    }
+    r--; // Heaviest person is always "rescued" (either alone or with l)
+    boats++;
+}
+```
+*   **The `l <= r` condition:** This covers the base case where a single person remains. When `l == r`, the person occupies one final boat.
+*   **Pointer Advancement:** The `r--` occurs in every iteration because the heaviest person is guaranteed to be assigned to a boat regardless of whether they are paired. The `l++` is conditional, acting as a greedy match.
+
+### 3. Edge-Case Handling
+*   **Empty Array:** If `people` is empty, the loop does not execute; `boats` remains 0. Correct.
+*   **Single Person:** If `people.length == 1`, the loop runs once, `r--` executes, and `boats` becomes 1. Correct.
+*   **Unpairable elements:** If all `people[i] > limit`, the logic still holds (though the problem constraints typically imply `people[i] <= limit`), as each person would simply increment the `boats` counter individually.
+
+## Key Insights
+
+*   **Greedy Correctness:** This is a classic greedy problem where local optimal choices (pairing the heaviest with the lightest possible) lead to a global optimum. This works specifically because the bin capacity is limited to **exactly two**. If the capacity were $k > 2$, this greedy approach would fail, and we would likely require a more complex approach (e.g., Min-Priority Queues or dynamic programming).
+*   **Performance Nuance:** Using `Arrays.sort()` on an array of primitives (`int[]`) is significantly faster than sorting an `Integer[]` object array. Primitive sorting avoids overhead from object metadata and cache-unfriendly pointer dereferencing.
+*   **Subtle Bug Warning:** Do not attempt to use a `for` loop that increments `l` and decrements `r` based on index logic alone. The two-pointer `while` loop is safer because it correctly handles the scenario where the pointers collide (i.e., when only one person is left in the middle of the sorted list).
+
+---
