@@ -48,3 +48,54 @@ If `people[l] + people[r] <= limit`, pairing them is always optimal. Why? Becaus
 *   **Performance:** For extremely large datasets, the $O(N \log N)$ bottleneck is the sort. If the range of weights (the `limit`) is very small compared to $N$, a Counting Sort could reduce this to $O(N + \text{limit})$, though this is rarely necessary given the efficiency of `Arrays.sort`.
 
 ---
+
+## standard_two_pointer_with_counntingsort.java
+*Style: detailed*
+
+# Engineering Deep Dive: Optimal Rescue Boat Allocation
+
+## 1. Summary
+The objective is to minimize the number of boats required to transport people, given that each boat has a maximum capacity (`limit`) and can hold at most two people.
+
+This solution employs a **Greedy strategy combined with Counting Sort**. By sorting the weights in $O(N)$ time, we enable a **Two-Pointer** approach. The greedy choice is to always attempt to pair the heaviest person with the lightest person. If they fit, they share a boat; if not, the heaviest person must occupy a boat alone, as they cannot be paired with anyone lighter without exceeding the limit.
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(N + L)$
+*   **Counting Sort Phase:** We iterate through the input array of size $N$ once to populate the frequency array, then iterate through the frequency array of size $L$ (where $L$ is the `limit`) to reconstruct the sorted `people` array. This yields $O(N + L)$.
+*   **Two-Pointer Phase:** We iterate through the `people` array exactly once, with the pointers `lightest` and `heaviest` moving toward each other. This is $O(N)$.
+*   **Total:** $O(N + L)$. Given that $L$ is typically a constrained constant (e.g., 30,000 in typical competitive programming constraints), this outperforms the standard $O(N \log N)$ sorting approach.
+
+### Space Complexity: $O(N + L)$
+*   **Counting Array:** $O(L)$ to store the frequencies of weights.
+*   **Reconstructed Array:** $O(N)$ to store the sorted weights in the `people` array.
+*   **Total:** $O(N + L)$.
+
+## 3. Component Deep Dive
+
+### Counting Sort Logic
+Instead of a general-purpose $O(N \log N)$ sort, we leverage the problem constraints: $1 \le \text{people}[i] \le \text{limit}$. 
+*   **Frequency Map:** `weightCount` maps the weight value to its frequency.
+*   **Reconstruction:** We iterate linearly through `weightCount`. Because we refill the `people` array in ascending order of weights, the array is effectively sorted, providing the necessary state for the two-pointer greedy algorithm.
+
+### The Two-Pointer Greedy Logic
+The state transition inside the `while (lightest <= heaviest)` loop is the core of the greedy strategy:
+1.  **Pairing Attempt:** We check if `people[lightest] + people[heaviest] <= limit`.
+2.  **Greedy Step:**
+    *   If they fit: `lightest++` (we have successfully paired the lightest person, moving them out of contention for subsequent boats).
+    *   Regardless of fitting: `heaviest--` (the heaviest person is *always* accommodated in the current boat, either alone or with a partner).
+    *   `boatCount++` is incremented every iteration, representing the allocation of one boat.
+
+### Edge Case Handling
+*   **One Person:** The `while` loop condition `lightest <= heaviest` correctly processes a single element (the boat is incremented once).
+*   **Limit Constraints:** By using `int[limit + 1]`, we ensure that any weight exactly equal to `limit` is indexable.
+*   **Unpairable People:** The logic handles scenarios where the lightest person is still too heavy to pair with anyone (though the check `people[lightest] + people[heaviest] <= limit` handles this implicitly).
+
+## 4. Key Insights
+
+*   **Sorting Bottleneck:** In systems with memory constraints, $O(N \log N)$ standard sorts are often preferred over Counting Sort if $L \gg N$. However, when $L$ is within a reasonable fixed range (like 30k), the $O(N + L)$ approach provides significant CPU cycles savings.
+*   **Implicit Assumptions:** The solution assumes `people[i]` is always $\le$ `limit`. If an input element exceeded `limit`, the `weightCount` array would throw an `ArrayIndexOutOfBoundsException`. In a production environment, an input validation layer should precede this logic.
+*   **Stability:** While standard counting sort is stable, we do not need stability here because the values (weights) are identical for the purpose of the boat-filling logic.
+*   **Performance Nuance:** The reconstruction of the `people` array is technically unnecessary if we process the counts directly in the two-pointer step (using the frequency array as a virtual sorted list). This would reduce space complexity to $O(L)$. However, the current implementation trades a small amount of space ($O(N)$ for the array) for significantly cleaner and more maintainable code.
+
+---
