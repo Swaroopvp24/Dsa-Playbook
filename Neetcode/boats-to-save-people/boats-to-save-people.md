@@ -109,3 +109,22 @@ while (l <= r) {
 *   **Subtle Bug Warning:** Do not attempt to use a `for` loop that increments `l` and decrements `r` based on index logic alone. The two-pointer `while` loop is safer because it correctly handles the scenario where the pointers collide (i.e., when only one person is left in the middle of the sorted list).
 
 ---
+
+## standard_two_pointer_with_counntingsort.java
+*Style: concise*
+
+### Rescue Boats Optimization Notes
+
+**Summary**
+Calculates the minimum number of boats required to carry people, where each boat has a maximum capacity of two people and a weight `limit`. It uses a counting sort to achieve $O(n + \text{limit})$ time complexity, followed by a greedy two-pointer approach to pair the lightest and heaviest individuals.
+
+**Key Components**
+*   **`weightCount` array**: Frequency map used to perform a linear-time sort (Counting Sort) since individual weights are constrained by `limit`.
+*   **`lightest` / `heaviest` pointers**: Greedy selection strategy; if the lightest person can fit with the heaviest, pair them together. Otherwise, the heaviest person must occupy the boat alone.
+
+**Logic to Remember**
+*   **Sorting optimization**: Instead of $O(n \log n)$ via `Arrays.sort()`, utilize the problem constraint that `people[i] <= limit` to sort in $O(n)$ time.
+*   **Greedy strategy**: The heaviest person *must* be considered. Pairing them with the lightest possible person maximizes the utility of the remaining boat capacity without ever needing to worry about "better" configurations.
+*   **Pointer movement**: When the condition `people[lightest] + people[heaviest] <= limit` is met, both pointers converge. If not met, only the `heaviest` pointer moves, as the heavy person is forced to travel solo.
+
+---
