@@ -58,3 +58,20 @@ The "Greedy" nature works here because the decision at each step is independent 
 2.  **Zero-Profit Semantic:** Ensure the requirements clarify whether selling on the same day is prohibited (which it is here, due to the implicit $j > i$ constraint). The code correctly handles this as the subtraction `prices[i] - prices[i]` will result in `0` profit, which is ignored by the `Math.max(maxProfit, ...)` operation.
 
 ---
+
+## standard_two_pointer.java
+*Style: concise*
+
+### Overview
+Calculates the maximum profit achievable from a single buy-sell transaction in an array of stock prices. Uses a sliding window (two-pointer) approach to achieve $O(n)$ time complexity and $O(1)$ space complexity.
+
+### Key Logic
+*   **`l` (Left Pointer):** Tracks the index of the lowest price encountered so far (the potential buying point).
+*   **`r` (Right Pointer):** Iterates through the array to find potential selling points.
+*   **Update Rule:** If `prices[r] > prices[l]`, calculate potential profit. If `prices[r] <= prices[l]`, the current price is a new local minimum, so update `l` to `r` to "reset" the buy point.
+
+### Implementation Notes
+*   **Efficiency:** The array is traversed exactly once.
+*   **Greedy Reset:** By moving `l = r` whenever a lower price is found, the algorithm effectively discards previous, less-optimal buy points without redundant calculations.
+
+---
