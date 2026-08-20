@@ -52,3 +52,23 @@ There are two distinct mental models provided in the source:
 *   **Subtle Bug Warning:** Be cautious of the initialization of `minBuyPrice`. Initializing it to `0` instead of `prices[0]` or `Integer.MAX_VALUE` will result in incorrect profit calculations if the array contains only high prices (e.g., `[100, 101]`), as the algorithm might incorrectly compare against the zero-base rather than the actual price floor.
 
 ---
+
+## standard_two_pointer.java
+*Style: concise*
+
+### Study Notes: Best Time to Buy and Sell Stock
+
+**Overview**
+Calculates the maximum profit from a single stock transaction using a sliding window approach. It iterates through price data, tracking the lowest buy price found so far to maximize the potential gain.
+
+**Key Components**
+* `maxProfit`: Tracks the global maximum profit found.
+* `l` (left pointer): Represents the buying day; resets to the current index (`r`) when a cheaper price is found.
+* `r` (right pointer): Represents the selling day; traverses the array once.
+
+**Logic Notes**
+* **Time Complexity:** $O(n)$ — Single pass through the array.
+* **Greedy Strategy:** If `prices[r] < prices[l]`, the current price is a better buying opportunity than the previous one, so we move `l` to `r` immediately.
+* **Pointer Update:** `r` always increments regardless of whether a new `maxProfit` is found, ensuring $O(n)$ performance.
+
+---
