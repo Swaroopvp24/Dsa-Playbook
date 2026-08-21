@@ -146,3 +146,21 @@ While the code uses `HashMap<Character, Integer>`, in performance-critical produ
 Be aware that this solution returns the maximum length of the *transformed* string. If the problem were modified to require the actual transformed string (reconstructing the result), the complexity would shift significantly, as one would need to track the dominant character and the indices of the modifications within the sliding window.
 
 ---
+
+## optimal_two_pointer_modfied.java
+*Style: concise*
+
+### Longest Repeating Character Replacement
+Finds the length of the longest substring containing the same letter after performing at most `k` character replacements using a sliding window approach.
+
+#### Key Components
+*   `freq[]`: A frequency array (size 26) used instead of a `HashMap` for performance, given the constraint of uppercase English letters.
+*   `maxf`: Tracks the count of the most frequent character currently within the window.
+*   `r` / `l`: Right and left pointers defining the sliding window.
+
+#### Logic Notes
+*   **Validity Constraint**: A window is valid if `(window_size - maxf) <= k`. If the number of characters that *aren't* the most frequent character exceeds `k`, the window is invalid and the left pointer must shrink.
+*   **`maxf` Optimization**: Note that `maxf` does not need to be decremented when the window shrinks. Even if the actual `maxf` of the new window is smaller, the stale `maxf` still represents the largest frequency seen in any previous valid window. Using the stale value only helps find a *larger* result, making the logic both correct and efficient.
+*   **Time Complexity**: $O(N)$, where $N$ is the length of the string, as the window pointers only traverse the string once.
+
+---
