@@ -135,3 +135,22 @@ It is a common point of confusion that `mostFrequentCount` is not decremented wh
 *   The current implementation is **not thread-safe**. It relies on shared state in the `characterFrequency` map. If this were moved to a service class, it should be made stateless or the map should be instantiated within the method scope (as it is now) to ensure thread-local execution.
 
 ---
+
+## optimal_two_pointer_modfied.java
+*Style: concise*
+
+### Study Notes: Longest Repeating Character Replacement
+
+#### Purpose
+Finds the length of the longest substring containing the same letter after replacing at most `k` characters using a sliding window approach.
+
+#### Key Components
+*   **`characterFrequency` (int[26])**: Tracks counts of characters in the current window to avoid `HashMap` overhead.
+*   **`mostFrequentCount`**: Tracks the frequency of the most abundant character currently in the window.
+*   **Sliding Window (`left` to `right`)**: Expands to include characters; shrinks when the number of non-dominant characters exceeds `k`.
+
+#### Logic Notes
+*   **Window Validity**: A window is valid if `(windowSize - mostFrequentCount) <= k`. The term `(right - left + 1) - mostFrequentCount` represents the number of characters that would need to be replaced to make all characters in the window uniform.
+*   **Optimization**: We don't need to decrement `mostFrequentCount` when shrinking the window. Even if the actual `mostFrequentCount` decreases as `left` moves, the `maxLength` will not improve for that specific window size, effectively carrying the "best" historical frequency forward until a better one is found. This keeps the logic $O(n)$ time complexity.
+
+---
