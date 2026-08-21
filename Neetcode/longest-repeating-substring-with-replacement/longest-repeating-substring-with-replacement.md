@@ -57,3 +57,23 @@ While this solution is $O(A \cdot N)$, it is less efficient than the single-pass
 The current implementation resets `targetCharacterCount` inside the `targetCharacter` loop but not `left`. This is correct because the `left` pointer must be reset for every new character iteration. If the developer attempted to maintain state across characters, the logic would break, highlighting that the algorithm treats each character "target" as an independent problem instance.
 
 ---
+
+## standard_two_pointer_modified.java
+*Style: concise*
+
+### Notes: Longest Repeating Character Replacement
+
+**Overview**
+Finds the longest substring length possible after replacing at most `k` characters to make all characters in the substring identical. It achieves this by iterating through each possible target character and maintaining a sliding window.
+
+**Key Logic**
+*   **Target-Based Sliding Window:** Instead of tracking the global most frequent character (as in the standard $O(N)$ solution), this approach brute-forces each character ('A'-'Z') as the "intended" character for the window.
+*   **Window Validity Condition:** A window is valid if `(windowSize - countOfTargetChar) <= k`. This represents the number of characters that would need to be replaced to make the entire window equal to `targetCharacter`.
+*   **Complexity:** $O(26 \times N)$, which simplifies to $O(N)$.
+
+**Implementation Details**
+*   `present[]`: Optimization to skip characters not present in the input string, avoiding unnecessary passes.
+*   **Shrink Logic:** The `while` loop decrements `targetCharacterCount` correctly when moving the `left` pointer to maintain the validity constraint.
+*   **Result:** `maxLength` is updated at every step, ensuring the largest valid window size across all target character iterations is captured.
+
+---
