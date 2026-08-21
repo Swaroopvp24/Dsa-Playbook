@@ -59,3 +59,34 @@ The primary weakness of the current implementation is that it re-scans the strin
 *   **Refactor to single-pass:** The logic can be collapsed into a single `while` loop, reducing the constant factor of the runtime by roughly 26x.
 
 ---
+
+## standard_two_pointer_modified.java
+*Style: concise*
+
+## Quick Summary  
+Finds the longest substring of `s` that can be turned into a single repeated character by changing at most `k` characters (LeetCode 424 – *Longest Repeating Character Replacement*).
+
+---
+
+## Key Components  
+
+| Element | Purpose |
+|---------|---------|
+| **`characterReplacement(String s, int k)`** | Main method; returns the maximal length. |
+| `boolean[] present` | Flags which uppercase letters actually appear in `s` to skip unnecessary target scans. |
+| Outer loop `for (char targetCharacter = 'A' … 'Z')` | Treats each existing letter as the candidate “majority” character for the window. |
+| Sliding‑window variables `left`, `right`, `targetCharacterCount` | Maintains a window where the number of non‑target chars ≤ `k`. |
+| Condition `while ((right‑left+1) - targetCharacterCount > k)` | Shrinks the window when the allowed replacements are exceeded. |
+| `maxLength = Math.max(maxLength, right‑left+1)` | Updates the best window size found for the current target. |
+
+---
+
+## Non‑Obvious Logic  
+
+- **Pre‑filtering with `present`** – Scans the string once to know which letters occur; the outer loop skips letters that never appear, saving up to 26 unnecessary O(N) passes.  
+- **Window invariant**: `windowSize - targetCharacterCount` equals the count of characters that would need to be replaced to make the whole window the `targetCharacter`. The `while` loop enforces this count ≤ `k`.  
+- **Re‑using `targetCharacterCount`** – When `left` moves forward, the count is decremented only if the leaving character matches the target, keeping the invariant O(1) per step.  
+
+Overall complexity: **O(26 · N) ≈ O(N)** time, **O(1)** extra space (aside from the fixed 26‑element boolean array).
+
+---
