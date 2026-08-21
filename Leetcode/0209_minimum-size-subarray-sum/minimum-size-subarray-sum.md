@@ -52,3 +52,57 @@ This approach is greedy because, for every `r`, it finds the *smallest* valid wi
 *   If the input array contains **negative numbers**, this sliding window approach breaks. In the presence of negative values, the window sum is no longer monotonic, and one would need to use a `Prefix Sum + Monotonic Queue` or a `Balanced BST` approach to maintain $O(n \log n)$ or $O(n)$ complexity.
 
 ---
+
+## prefixSum_binarySearch.java
+*Style: detailed*
+
+# Engineering Deep-Dive: Minimum Size Subarray Sum (Binary Search Approach)
+
+## 1. Summary
+This implementation solves the "Minimum Size Subarray Sum" problem by transforming the input array into a **Prefix Sum array** and performing a **Binary Search** for each possible starting position.
+
+Instead of utilizing the standard sliding window (two-pointer) approach—which would be $O(N)$—this algorithm treats the prefix sum array as a monotonically increasing sequence. For every index $i$, it searches for the smallest index $j \ge i$ such that $PrefixSum[j+1] - PrefixSum[i] \ge target$. By decoupling the window search from a linear scan, this approach ensures that for any fixed start point, the optimal end point is found in logarithmic time.
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(N \log N)$
+*   **Preprocessing:** Building the `prefixSum` array takes $O(N)$ time.
+*   **Search Phase:** We iterate through $N$ indices. For each index, we perform a binary search over the range $[i, n]$, which takes $O(\log N)$.
+*   **Total:** $O(N) + O(N \log N) = \mathbf{O(N \log N)}$.
+
+### Space Complexity: $O(N)$
+*   The algorithm allocates a `prefixSum` array of size $N+1$ to store the cumulative sums. This auxiliary space is mandatory for this specific implementation technique, making it less memory-efficient than the $O(1)$ space sliding window approach.
+
+---
+
+## 3. Component Deep Dive
+
+### Prefix Sum Array Construction
+The `prefixSum` array is defined such that `prefixSum[k]` stores the sum of `nums[0...k-1]`.
+*   **Invariant:** `prefixSum[i+1] - prefixSum[j]` yields the sum of the subarray `nums[j...i]`.
+*   **Edge Case:** The array size is $N+1$ to handle the empty prefix (sum 0) at `prefixSum[0]`, allowing range calculations for any subarray starting at index 0 without conditional branching.
+
+### The Binary Search Engine
+The core logic resides within the `while (l < r)` loop.
+*   **Lower Bound Logic:** The code seeks the *leftmost* index `mid` where the condition `prefixSum[mid + 1] - prefixSum[i] >= target` is true.
+*   **Convergence:** By setting `r = mid` when the condition is met, the search space narrows to the left, effectively finding the smallest subarray starting at $i$ that satisfies the target.
+*   **Termination:** If `l` reaches `n` without satisfying the condition, it signifies that no subarray starting at index $i$ (or any subsequent index) can reach the target sum (assuming positive integers).
+
+### Sentinel Value Handling
+*   The code initializes `res = n + 1`. This serves as a sentinel value representing "Infinity" or "No valid subarray found." 
+*   The final ternary operator `res == (n + 1) ? 0 : res` converts this sentinel into the required problem specification output of `0`.
+
+---
+
+## 4. Key Insights
+
+### Why $O(N \log N)$ vs $O(N)$?
+While this binary search approach is theoretically slower than the $O(N)$ two-pointer sliding window, it provides a distinct advantage when dealing with **non-contiguous query requirements** or scenarios where the array is static but queries for different "targets" might be performed repeatedly after the initial $O(N)$ preprocessing.
+
+### Subtle Bugs & Nuances
+*   **Integer Overflow:** The current implementation uses `int` for prefix sums. In production systems with large arrays or large integer values, the `prefixSum` array should be initialized as `long[]` to prevent overflow during the summation process.
+*   **Monotonicity Constraint:** This algorithm **strictly relies on non-negative integers** in the `nums` array. If the array contains negative numbers, the `prefixSum` array is no longer monotonically increasing, rendering binary search invalid.
+*   **The `mid` calculation:** The line `int mid = (l + r) / 2;` is generally safe here given the constraints, but in systems where `l + r` could exceed `Integer.MAX_VALUE`, `l + (r - l) / 2` is the idiomatic safety pattern.
+*   **Loop Boundary:** `prefixSum[mid + 1]` accessed within the loop is safe because `r` is initialized to `n`, and `mid` is bounded by `n-1` at maximum, ensuring the access never exceeds index `n`.
+
+---
