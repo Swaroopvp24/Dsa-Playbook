@@ -77,3 +77,61 @@ Finds the longest substring length possible after replacing at most `k` characte
 *   **Result:** `maxLength` is updated at every step, ensuring the largest valid window size across all target character iterations is captured.
 
 ---
+
+## optimal_two_pointer.java
+*Style: detailed*
+
+# Engineering Deep-Dive: Longest Repeating Character Replacement
+
+## Summary
+The solution implements a **Sliding Window** technique to solve the Longest Repeating Character Replacement problem. The core observation is that for any window of length $L$ with a character frequency $F$ of the most frequent character, the number of replacements required to make the entire window uniform is $L - F$.
+
+The algorithm maintains a dynamic window $[left, right]$ that satisfies the constraint $(right - left + 1) - mostFrequentCount \le k$. By expanding the $right$ boundary and only shrinking the $left$ boundary when the constraint is violated, we effectively search for the maximum valid window size in linear time.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Expansion:** The `right` pointer traverses the string exactly once.
+*   **Contraction:** Although there is a `while` loop, the `left` pointer also only traverses the string at most once. Each character is added to the frequency map once and removed at most once.
+*   **Map Operations:** With a fixed alphabet size (e.g., 26 for uppercase English letters), `Map` operations (or an integer array used as a frequency map) are $O(1)$. Thus, the amortized complexity remains linear.
+
+### Space Complexity: $O(1)$
+*   The `HashMap` stores character frequencies. Since the keys are bounded by the input character set size (e.g., 26 uppercase English letters), the space usage does not scale with $N$. It is effectively constant space.
+
+---
+
+## Component Deep Dive
+
+### 1. The Frequency Heuristic (`mostFrequentCount`)
+A critical nuance is that `mostFrequentCount` is **not strictly updated when the `left` pointer increments**. 
+*   **Why this works:** When `(right - left + 1) - mostFrequentCount > k` is true, it means we have found a window that is "too invalid." By moving `left`, we decrease the window size. We do not need to recalculate the *true* `mostFrequentCount` for the new, smaller window because that smaller window cannot possibly result in a `maxLength` greater than the one we have already recorded. We only care about finding a window size that *exceeds* our previous `maxLength`.
+
+### 2. Window Validity Constraint
+The expression `(right - left + 1) - mostFrequentCount` calculates the number of characters that *must* be changed to make all characters in the current window equal to the most frequent character currently in the window. If this value exceeds $k$, the window is invalid, and we must shrink it from the left.
+
+### 3. Edge Case Handling
+*   **$k = 0$:** The logic collapses to finding the longest substring of identical consecutive characters, as `(length - mostFrequentCount)` must be 0.
+*   **$k \ge s.length()$:** The entire string can be converted to the most frequent character, and the function will correctly return `s.length()`.
+*   **Single character strings:** The loops execute correctly, returning 1.
+
+---
+
+## Key Insights & Optimization Nuances
+
+### Optimization: Array over HashMap
+While the provided code uses a `HashMap<Character, Integer>`, this involves unnecessary overhead:
+*   **Boxing/Unboxing:** Constant conversion between `char` and `Character` objects.
+*   **Hashing Overhead:** The constant time complexity of a HashMap hides a non-trivial constant factor.
+*   **Refinement:** Replacing `HashMap<Character, Integer>` with `int[26]` (assuming ASCII/uppercase alphabet) eliminates object allocation and hashing, significantly improving performance in tight latency-sensitive loops.
+
+### Potential Logic Trap: The "Stale" Max
+It is a common point of confusion that `mostFrequentCount` is not decremented when `left` moves. 
+*   Consider a window that results in a valid `maxLength`. If we then shrink the window, the *new* max frequency might be lower than the old one. 
+*   However, because we are looking for the *maximum* length, we don't care about a shrinking window's frequency. We only care if we can find a *larger* window later. If a window with a smaller `mostFrequentCount` appears, it cannot produce a `maxLength` larger than the current global `maxLength`, so the accuracy of `mostFrequentCount` for smaller windows is irrelevant to the final output.
+
+### Subtle Bug / Thread Safety
+*   The current implementation is **not thread-safe**. It relies on shared state in the `characterFrequency` map. If this were moved to a service class, it should be made stateless or the map should be instantiated within the method scope (as it is now) to ensure thread-local execution.
+
+---
