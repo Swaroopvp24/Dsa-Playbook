@@ -90,3 +90,59 @@ Finds the longest substring of `s` that can be turned into a single repeated cha
 Overall complexity: **O(26 · N) ≈ O(N)** time, **O(1)** extra space (aside from the fixed 26‑element boolean array).
 
 ---
+
+## optimal_two_pointer.java
+*Style: detailed*
+
+# Technical Deep-Dive: Longest Repeating Character Replacement
+
+## Summary
+The provided solution employs the **Sliding Window** technique with a dynamic frequency map to identify the longest substring that can be transformed into a string of identical characters by performing at most `k` replacements. 
+
+The core algorithmic insight is that for any window of length `(r - l + 1)`, if the count of the most frequent character within that window is `maxf`, the number of characters requiring replacement is `(r - l + 1) - maxf`. The algorithm maintains a valid window where `(window_size - maxf) <= k` and expands `r` greedily, only shrinking `l` when the constraint is violated.
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Expansion:** The right pointer `r` traverses the string exactly once ($O(N)$).
+*   **Contraction:** Although there is a `while` loop, the left pointer `l` also traverses the string at most once. Each character is added to the hash map once and removed from the hash map at most once.
+*   **Map Operations:** With a character set size restricted to the English alphabet (26), map operations (`get`/`put`) are effectively $O(1)$.
+*   **Total:** $O(N)$.
+
+### Space Complexity: $O(1)$
+*   The `HashMap` stores at most 26 unique keys (for uppercase English letters). Since the alphabet size is constant regardless of input string length $N$, the space used is constant $O(26) = O(1)$.
+
+---
+
+## Component Deep Dive
+
+### 1. The `maxf` Optimization
+One might be tempted to re-scan the map to find the new `maxf` after decrementing a count during contraction. However, `maxf` does not need to be perfectly accurate for every `l`. 
+*   **Why?** If we shrink the window, the window size decreases. `maxf` only needs to represent the historical maximum frequency found in *any* valid window seen so far. If a new `maxf` is smaller than the previous one, it implies the current window cannot possibly exceed the maximum length we have already recorded. Thus, we only update `maxf` when we find a character with a frequency *higher* than the existing `maxf`.
+
+### 2. The Sliding Window Constraint
+The condition `(r - l + 1) - maxf > k` effectively checks: "Are the number of characters that *aren't* the majority character greater than our budget `k`?" If true, the window is invalid, and we must increment `l` until the constraint is met.
+
+### 3. Edge-Case Handling
+*   **$k=0$:** The logic correctly defaults to finding the longest contiguous substring of identical characters.
+*   **Empty string:** The loop condition `r < s.length()` handles this gracefully, returning `0`.
+*   **All characters different:** `maxf` stays at 1, the window length stays at $k+1$, correctly returning $k+1$ (assuming $k < N$).
+
+---
+
+## Key Insights & Nuances
+
+### Why `maxf` doesn't need to be recalculated
+A common point of confusion is why we don't decrement `maxf` when `l` moves. 
+*   If the current window size is `W` and `W - maxf <= k`, then `res = W`. 
+*   If we move to a state where we increment `r`, we only care if we can find a window *larger* than `res`. 
+*   Because `maxf` only increases when `r` finds a better candidate, and `res` is only updated when the window is valid, the variable `maxf` acts as a "high-water mark." Even if the local `maxf` for a smaller window is lower, it doesn't invalidate our ability to track the longest window found thus far.
+
+### Performance Nuance: Data Structures
+While the code uses `HashMap<Character, Integer>`, in performance-critical production systems where the input is guaranteed to be ASCII/English letters, replacing `HashMap` with an `int[26]` array is highly recommended. 
+*   **Benefits:** This avoids the overhead of object hashing, autoboxing (`int` to `Integer`), and pointer chasing, potentially offering a 5x–10x speedup in Java due to cache locality and the removal of object allocation.
+
+### Potential "Trap"
+Be aware that this solution returns the maximum length of the *transformed* string. If the problem were modified to require the actual transformed string (reconstructing the result), the complexity would shift significantly, as one would need to track the dominant character and the indices of the modifications within the sliding window.
+
+---
