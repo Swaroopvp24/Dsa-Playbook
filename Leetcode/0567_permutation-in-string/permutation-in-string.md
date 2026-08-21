@@ -59,3 +59,58 @@ While `Arrays.equals(s1f, freq)` is $O(26)$ and technically $O(1)$ constant time
 *   **Implicit Logic Order:** The order of `matches--` vs `matches++` is rigid. You must ensure you update the `freq` array *before* checking the `s1f` equality, otherwise, you are checking the state *before* the character was added/removed, which leads to logical off-by-one errors.
 
 ---
+
+## sliding_window-myversion.java
+*Style: detailed*
+
+# Technical Reference: Sliding Window Permutation Check
+
+## 1. Summary
+The `checkInclusion` algorithm determines if `s2` contains a substring that is a permutation of `s1`. The core approach utilizes a **Fixed-Size Sliding Window** combined with **Frequency Array Comparison**. 
+
+By maintaining a frequency distribution (histogram) of the current window of length `k` (where `k = s1.length()`) in `s2`, the algorithm compares this against the target frequency map of `s1`. If the maps are identical, a permutation exists.
+
+## 2. Complexity Analysis
+
+*   **Time Complexity: $O(L_1 + (L_2 \cdot \Sigma))$**
+    *   $L_1$ is the length of `s1`, $L_2$ is the length of `s2`, and $\Sigma$ is the alphabet size (constant 26).
+    *   Initializing the `s1f` array takes $O(L_1)$.
+    *   The sliding window iterates through `s2` once ($L_2$ operations). Inside each iteration, `Arrays.equals(s1f, freq)` performs a linear scan of the 26-element arrays, leading to a complexity of $O(26 \cdot L_2)$. 
+    *   Since $\Sigma$ is constant, this is effectively $O(L_1 + L_2)$.
+
+*   **Space Complexity: $O(\Sigma)$**
+    *   We allocate two integer arrays of size 26, regardless of input string length. This constitutes $O(1)$ auxiliary space relative to input size, specifically $O(\Sigma)$.
+
+## 3. Component Deep Dive
+
+### Frequency Tracking
+*   `s1f`: A static baseline reference map generated once.
+*   `freq`: A mutable sliding window map updated dynamically.
+*   The logic relies on the fact that if two strings are permutations of each other, their character counts must be identical.
+
+### Window Management
+*   **Expansion:** The loop `for (int r = 0; r < s2.length(); r++)` acts as the right boundary incrementer. 
+*   **Contraction:** The `while (r - l >= k)` block ensures the window size never exceeds `s1.length()`. By decrementing `l` and moving the pointer, we effectively "slide" the window, removing the contribution of the leftmost character and adding the newest character at `r`.
+
+### Edge-Case Handling
+*   **$L_1 > L_2$:** The logic naturally handles this. If `s1` is longer than `s2`, `r - l >= k` will never allow `freq` to match `s1f` effectively, or the window will never reach size $k$ if $L_1 > L_2$, returning `false` (correct).
+*   **Empty Strings:** If `s1` is empty, the logic may behave unexpectedly depending on constraints; standard implementations assume $L_1 \ge 1$.
+*   **Alphabet Bounds:** The code assumes lowercase English letters (`c - 'a'`). If the input contains Unicode or mixed casing, the array indices would go out of bounds, requiring a larger hash map or a different offset strategy.
+
+## 4. Key Insights
+
+### Performance Optimization: Array Comparison
+The current `Arrays.equals` call is $O(26)$. While constant, it can be expensive if called $L_2$ times.
+*   **Optimization:** A more performant approach would be to track a `matches` count variable.
+    *   Maintain an integer `count` representing how many characters have matching frequencies between the window and `s1`.
+    *   Update `count` only when a character's frequency in the window changes to match its frequency in `s1`.
+    *   This reduces the comparison complexity from $O(\Sigma)$ to $O(1)$ per step.
+
+### Subtlety of the Window Slide
+The `while` loop structure is slightly unconventional. Usually, sliding windows increment `r` and `l` independently. Here, the `while` loop clears space only when the window exceeds size `k`. 
+*   **Potential Bug:** If `s1.length()` is 0, the code might return `true` erroneously because `Arrays.equals` of two empty arrays is `true`. Always validate input constraints for $k > 0$.
+
+### Memory Locality
+Because the alphabet is limited to 26, using `int[26]` is cache-friendly and vastly superior to a `HashMap<Character, Integer>`. The compiler and CPU can easily predict these memory accesses, minimizing cache misses during the loop execution.
+
+---
