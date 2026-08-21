@@ -106,3 +106,50 @@ While this binary search approach is theoretically slower than the $O(N)$ two-po
 *   **Loop Boundary:** `prefixSum[mid + 1]` accessed within the loop is safe because `r` is initialized to `n`, and `mid` is bounded by `n-1` at maximum, ensuring the access never exceeds index `n`.
 
 ---
+
+## prefixSum_binarySearch.java
+*Style: detailed*
+
+# Engineering Deep-Dive: Minimum Size Subarray Sum (Binary Search Approach)
+
+## Summary
+The provided solution addresses the "Minimum Size Subarray Sum" problem by combining **prefix sum arrays** with **binary search**. By pre-calculating the cumulative sums of the input array, we transform the range-sum query problem into a constant-time operation ($O(1)$) using the property $Sum(i, j) = PrefixSum[j+1] - PrefixSum[i]$. For each starting index $i$, the algorithm performs a binary search over the possible ending indices $j \in [i, n-1]$ to find the smallest range that satisfies the threshold `target`.
+
+## Complexity Analysis
+
+### Time Complexity: $O(n \log n)$
+*   **Prefix Sum Construction:** $O(n)$ to iterate through the array once.
+*   **Binary Search Execution:** The algorithm iterates through each starting index $i$ ($n$ iterations). Inside the loop, it performs a binary search over the range $[i, n]$, which takes $O(\log n)$ time.
+*   **Total:** $O(n + n \log n) \approx O(n \log n)$. 
+*   *Note:* While $O(n)$ is achievable via the two-pointer (sliding window) technique, this $O(n \log n)$ approach is more robust when dealing with constraints requiring search queries on static ranges.
+
+### Space Complexity: $O(n)$
+*   **Auxiliary Space:** We allocate a `prefixSum` array of size $n+1$ to store the cumulative sums. This provides the necessary $O(1)$ look-up capability to satisfy the binary search condition.
+
+---
+
+## Component Deep Dive
+
+### 1. Prefix Sum Array Construction
+*   **Logic:** `prefixSum[i]` stores the sum of `nums[0...i-1]`. `prefixSum[0]` is initialized to 0. 
+*   **Mathematical Property:** To calculate the sum of the subarray `nums[i...j]`, we use `prefixSum[j + 1] - prefixSum[i]`. This ensures we avoid redundant iterations inside the binary search logic.
+
+### 2. Binary Search Strategy
+*   **Invariant:** The `prefixSum` array is monotonically non-decreasing (assuming `nums[i] > 0`). This is a critical prerequisite for binary search.
+*   **Search Space:** For a fixed `i`, we search for the smallest index `mid` such that `prefixSum[mid + 1] - prefixSum[i] >= target`.
+*   **Refinement:** If `currentSum >= target`, the current `mid` is a potential candidate, so we store it and search the left half (`right = mid`) to see if a tighter subarray exists. If `currentSum < target`, we are guaranteed that all indices smaller than `mid` will also be insufficient, so we search right (`left = mid + 1`).
+
+### 3. Edge-Case Handling
+*   **`minLen` Initialization:** Initialized to `n + 1`. This acts as a sentinel value. If the code never finds a valid subarray, `minLen` remains `n + 1`, and the final ternary check correctly returns `0`.
+*   **Non-existent Subarray:** If the total sum of `nums` is less than `target`, `left` will eventually equal `n` in the binary search. The condition `if (left != n)` prevents invalid index access and prevents updating `minLen` with an invalid subarray length.
+
+---
+
+## Key Insights
+
+*   **Constraint Nuance:** This approach assumes all numbers in `nums` are positive. If the array contains negative numbers, the `prefixSum` array would lose its monotonic property, breaking binary search. In the presence of negative numbers, the Two-Pointer approach also fails, and one would typically use a `TreeMap` or a Monotonic Queue to maintain $O(n \log n)$ or $O(n)$ complexity.
+*   **Memory Efficiency:** The `prefixSum` array takes $O(n)$ space. While space-efficient relative to $O(n^2)$ matrix-based approaches, it is less memory-efficient than the sliding window approach which runs in $O(1)$ extra space.
+*   **Performance Optimization:** The `mid` calculation `(left + right) / 2` is safe from integer overflow because `n` is typically constrained within reasonable bounds for array indices in Java. However, in extreme architectural cases with very large arrays, `left + (right - left) / 2` is preferred as a best practice.
+*   **The "Why":** Why use binary search over the sliding window ($O(n)$)? While this solution is technically slower than the $O(n)$ sliding window, it provides an elegant demonstration of **Range Query Optimization**. This pattern is often a building block for solving more complex 2D range sum queries where sliding windows are not applicable.
+
+---
