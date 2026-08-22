@@ -60,3 +60,48 @@ While this $O(N \log N)$ approach is readable and correct, it is suboptimal for 
 *   **Integer Overflow:** If `first` or `x` are near `Integer.MIN_VALUE` or `Integer.MAX_VALUE`, `Math.abs(first - x)` could potentially overflow. In a production environment, this should be cast to `long` before calculation to ensure stability: `(long)first - x`.
 
 ---
+
+## standard_two_pointer(linear_Search).java
+*Style: detailed*
+
+# Technical Deep Dive: K-Closest Elements
+
+## Summary
+The provided solution employs a **"Find-and-Expand" two-pointer strategy**. It identifies the index of the element closest to the target $x$ using a linear search, then performs a bidirectional expansion to collect the $k$ closest neighbors. The algorithm prioritizes elements by their absolute distance to $x$, with a tie-breaking rule that favors smaller values (the left neighbor). Finally, it reconciles the collection order by sorting the resulting subset.
+
+## Complexity Analysis
+
+### Time Complexity: $O(N + k \log k)$
+*   **Initial Scan:** $O(N)$ to locate the starting `closestIndex`.
+*   **Expansion:** $O(k)$ to traverse and select $k$ elements via the `while` loop.
+*   **Sorting:** $O(k \log k)$ to sort the resulting `closestElements` list.
+*   **Total:** $O(N + k \log k)$. While $O(N)$ is acceptable, the $O(k \log k)$ post-processing sort makes this less efficient than an optimal $O(\log N + k)$ binary search approach.
+
+### Space Complexity: $O(k)$
+*   The space requirement is dominated by the storage of the resulting `closestElements` list, which requires $O(k)$ space. The auxiliary space used for pointers and scalar variables is $O(1)$.
+
+## Component Deep Dive
+
+### 1. Initial Pivot Selection
+The algorithm begins with a linear scan to find the "anchor" point.
+*   **Logic:** `Math.abs(x - arr[closestIndex]) > Math.abs(x - arr[i])`
+*   **Edge Case:** If the array contains duplicate values or multiple values with equal distance to $x$, the current logic finds the *first* occurrence of the minimum distance index.
+
+### 2. Bidirectional Expansion
+The `while` loop utilizes two pointers (`leftIndex`, `rightIndex`) to act as a sliding window expansion.
+*   **Boundary Handling:** The logic explicitly checks if `leftIndex` or `rightIndex` have crossed array bounds. This ensures no `ArrayIndexOutOfBoundsException` occurs.
+*   **Tie-Breaking:** The condition `Math.abs(x - arr[leftIndex]) <= Math.abs(x - arr[rightIndex])` is critical. By using `<=`, it ensures that if distances are equal, the `leftIndex` (the smaller value) is favored. This satisfies the problem requirement that in case of ties, smaller values are preferred.
+
+### 3. Post-Processing
+Since elements are added to the list as they are discovered (which might jump back and forth across the pivot), the resulting list is not necessarily sorted. The `Collections.sort(closestElements)` call enforces the required ascending output order.
+
+## Key Insights & Optimization Nuances
+
+*   **Algorithmic Efficiency:** The current solution is $O(N)$. However, because the input array is sorted (as implied by the nature of "closest elements" problems), a **Binary Search** could locate the pivot in $O(\log N)$. Furthermore, instead of expanding, one could use a **Sliding Window** over the sorted array to find the $k$-length subarray in $O(\log(N-k) + k)$ time, completely avoiding the need for a final $O(k \log k)$ sort.
+*   **Tie-Breaking Nuance:** The logic `Math.abs(x - arr[leftIndex]) <= Math.abs(x - arr[rightIndex])` is the "golden rule" of this implementation. If this were strictly `<` (exclusive of equality), the algorithm would fail the requirement to favor smaller values during ties.
+*   **Potential Bug/Redundancy:** 
+    *   The initial scan is $O(N)$. If the array is already sorted, the linear search for the closest element is an unnecessary bottleneck compared to `Arrays.binarySearch` or a manual binary search implementation. 
+    *   If $k = N$, the algorithm performs $O(N)$ work to build the list and then $O(N \log N)$ to sort it, whereas returning the original array would be $O(1)$ (or $O(N)$ for a copy).
+*   **Memory Efficiency:** For very large $k$, returning a view or using a deque to append/prepend could potentially avoid the need for the final `Collections.sort` if the logic was adjusted to ensure order preservation during insertion.
+
+---
