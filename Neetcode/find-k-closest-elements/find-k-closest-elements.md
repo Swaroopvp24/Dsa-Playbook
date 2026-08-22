@@ -160,3 +160,53 @@ if (Math.abs(x - arr[left]) <= Math.abs(x - arr[right])) {
 *   **Preconditions:** The logic relies entirely on the array being sorted. If the input is unsorted, this algorithm fails; a full sort ($O(N \log N)$) or partial selection algorithm would be required.
 
 ---
+
+## binary_search(moveslidingwindow).java
+*Style: detailed*
+
+# Technical Reference: Sliding Window Binary Search for Closest Elements
+
+## Summary
+The problem asks for $k$ elements in a sorted array that are closest to a target value $x$. The optimal approach treats the desired result as a **sliding window of size $k$** within the array. Since the array is sorted, the closeness of the window to $x$ is monotonic; we can use **binary search on the starting index** of this window $[0, \text{arr.length} - k]$ rather than the elements themselves. By comparing the element immediately to the left of a potential window (`arr[mid]`) with the element immediately to the right (`arr[mid + k]`), we determine if shifting the window right improves proximity to $x$.
+
+## Complexity Analysis
+
+### Time Complexity: $O(\log(N-K) + K)$
+*   **Binary Search:** $O(\log(N-K))$, where $N$ is the length of the array and $K$ is the target count. We perform a binary search over the range of possible starting indices, effectively halving the search space in each iteration.
+*   **Result Construction:** $O(K)$. After identifying the starting index `left`, we iterate $K$ times to populate the result list.
+*   **Total:** $O(\log(N-K) + K)$. This is significantly more efficient than a linear scan ($O(N)$) or a heap-based approach ($O(N \log K)$).
+
+### Space Complexity: $O(1)$ (excluding output)
+*   The algorithm operates in-place using only primitive pointers (`left`, `right`, `mid`). The extra space is only utilized for the final list construction, which is required by the problem return type.
+
+## Component Deep Dive
+
+### Binary Search Logic
+The condition `x - arr[mid] > arr[mid + k] - x` is the heart of the algorithm.
+*   **The Window:** If our window is $[mid, mid + k]$, the element being "pushed out" by a rightward shift is `arr[mid]`, and the element being "pulled in" is `arr[mid + k]`.
+*   **The Decision:** 
+    *   If `x - arr[mid] > arr[mid + k] - x`, it implies `arr[mid + k]` is closer to $x$ than `arr[mid]` is. Therefore, the current window is suboptimal, and we must shift the starting position to the right (`left = mid + 1`).
+    *   If the condition is false, `arr[mid]` is closer to or equidistant to $x$ compared to `arr[mid + k]`. Because the array is sorted, we prefer the smaller element (or the one closer to the left), so we keep `mid` as a potential candidate (`right = mid`).
+
+### Edge Case Handling
+*   **$k = N$:** The range `right = arr.length - k` becomes $0$. The loop `while (left < right)` terminates immediately, correctly returning the entire array.
+*   **$x$ outside array bounds:**
+    *   If $x$ is smaller than all elements, the condition `x - arr[mid] > arr[mid + k] - x` will almost always be false, forcing `right` to collapse to $0$, returning the first $k$ elements.
+    *   If $x$ is larger than all elements, the condition will be true, pushing `left` to the end of the search space, returning the last $k$ elements.
+*   **Equidistant elements:** The problem specifies that if two numbers have the same difference, the smaller number is preferred. The `<` comparison effectively handles ties by favoring the left side of the window.
+
+## Key Insights
+
+### 1. Monotonicity of Proximity
+The genius of this approach is transforming the problem from "find $k$ elements" to "find the optimal starting point." Because the array is sorted, the function $f(i) = |x - arr[i+k]| - |x - arr[i]|$ is monotonically increasing. Binary search is applicable because we are effectively searching for the point where this function crosses zero.
+
+### 2. Avoid Midpoint Overflow
+In production environments with very large arrays (approaching `Integer.MAX_VALUE`), `(left + right) / 2` can overflow. A more robust implementation would use:
+```java
+int mid = left + (right - left) / 2;
+```
+
+### 3. Comparison Logic Nuance
+Note that `x - arr[mid]` and `arr[mid + k] - x` are essentially comparing absolute differences. By structuring the inequality as `diff_left > diff_right`, we avoid the overhead of `Math.abs()`, which is a micro-optimization that keeps the hot loop branch-prediction friendly.
+
+---
