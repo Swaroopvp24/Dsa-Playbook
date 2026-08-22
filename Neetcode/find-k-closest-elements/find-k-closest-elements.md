@@ -105,3 +105,58 @@ Since elements are added to the list as they are discovered (which might jump ba
 *   **Memory Efficiency:** For very large $k$, returning a view or using a deque to append/prepend could potentially avoid the need for the final `Collections.sort` if the logic was adjusted to ensure order preservation during insertion.
 
 ---
+
+## standard_two_pointer(sliding_window).java
+*Style: detailed*
+
+# Technical Reference: Sliding Window Shrinkage for Closest Elements
+
+## Summary
+The provided solution addresses the problem of finding the $k$ closest elements to a target $x$ in a sorted array by utilizing a **two-pointer window contraction strategy**. 
+
+Instead of searching for the insertion point (binary search) or calculating distances for all elements, the algorithm treats the entire array as an initial window $[left, right]$ and iteratively shrinks it. By comparing the absolute differences between the target $x$ and the current boundaries (`arr[left]` and `arr[right]`), the algorithm greedily discards the element that is objectively farther from $x$. Since the array is sorted, this maintains the contiguous property of the result set, eventually leaving exactly $k$ elements that are guaranteed to be the closest.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Derivation:** The algorithm initializes two pointers at the ends of the array. In each iteration of the `while` loop, exactly one pointer is incremented or decremented. The loop terminates when `right - left + 1 == k`, meaning we perform exactly $N - k$ operations.
+*   **Constraints:** Since $k \le N$, the complexity is effectively linear relative to the size of the input array.
+
+### Space Complexity: $O(k)$
+*   **Derivation:** The algorithm operates in-place on the input array (ignoring the space required for the output list). The result list requires $O(k)$ space to store the $k$ identified elements. No auxiliary data structures are used during the processing phase.
+
+---
+
+## Component Deep Dive
+
+### 1. The Contraction Logic
+```java
+if (Math.abs(x - arr[left]) <= Math.abs(x - arr[right])) {
+    right--;
+} else {
+    left++;
+}
+```
+*   **The Tie-Breaking Rule:** The `Math.abs(x - arr[left]) <= Math.abs(x - arr[right])` condition is critical. By using `<=`, when distances are equal, the algorithm prefers to keep the left element (by decrementing `right`). This aligns with the standard problem requirement that if two numbers have the same distance, the smaller number is preferred.
+*   **Mechanism:** Because the array is sorted, if `arr[left]` is closer to `x` than `arr[right]`, then `arr[right]` is guaranteed to be the least optimal element in the current range, allowing for a safe O(1) decision per step.
+
+### 2. Termination Condition
+*   The loop condition `right - left >= k` ensures that the window shrinks until exactly $k$ elements remain. Note that the length of the window is `right - left + 1`. When `right - left + 1 == k`, the condition `(k-1) >= k` evaluates to `false`, exiting the loop correctly.
+
+---
+
+## Key Insights & Performance Nuances
+
+### Algorithmic Trade-offs
+*   **Binary Search Alternative:** While this solution is $O(N)$, a binary search approach (finding the insertion point and expanding outwards) would yield $O(\log N + k)$. 
+    *   **When to use $O(N)$:** This two-pointer approach is significantly more robust and easier to implement correctly. It avoids the complexities of handling edge cases associated with `Arrays.binarySearch` (e.g., target $x$ being outside the bounds of the array).
+    *   **When to use $O(\log N + k)$:** If $N$ is massive (millions of elements) and $k$ is very small, the binary search approach will outperform this linear solution.
+
+### Subtle Considerations
+*   **Non-Strict Inequality:** The use of `<=` is not arbitrary. In scenarios where `x` is equidistant from two elements, the problem usually defines the smaller value as "closer." By removing the right (larger) value when distances are equal, we preserve the smaller value, satisfying standard competitive programming constraints.
+*   **Memory Efficiency:** The approach is highly memory-efficient as it avoids creating intermediate lists or heaps (unlike a PriorityQueue-based solution, which would incur $O(k \log k)$ or $O(N \log k)$ time and $O(k)$ extra space).
+*   **Preconditions:** The logic relies entirely on the array being sorted. If the input is unsorted, this algorithm fails; a full sort ($O(N \log N)$) or partial selection algorithm would be required.
+
+---
