@@ -81,3 +81,45 @@ The use of `Collections.sort(res)` is a pragmatic trade-off. While the algorithm
 *   **Input Requirements:** This implementation assumes the input `arr` is already sorted. If the input is not sorted, the two-pointer expansion logic will fail to produce the correct set of elements. Always assert sorted input in a pre-condition check.
 
 ---
+
+## standard_two_pointer(sliding_window).java
+*Style: detailed*
+
+# Deep-Dive Reference: $K$ Closest Elements
+
+## Summary
+The provided solution utilizes a **two-pointer shrinking strategy** to isolate the $k$ elements closest to $x$ within a sorted array. Since the array is sorted, the elements closest to $x$ must form a contiguous subarray. The algorithm treats the problem as a "removal" task: start with the entire range $[0, n-1]$ and iteratively discard the element that is furthest from $x$ until exactly $k$ elements remain. By comparing the distance of the boundaries (`arr[l]` and `arr[r]`) to $x$, we greedily reduce the window size.
+
+## Complexity Analysis
+
+### Time Complexity: $O(n)$
+*   **Derivation:** Let $n$ be the length of the array. The `while` loop runs exactly $n - k$ times. In each iteration, the search window size decreases by 1. Since $k$ is a constant relative to $n$ in the worst case (where $k \approx 0$ or $k \approx n$), the loop performs $O(n)$ operations. The subsequent `for` loop to build the result list takes $O(k)$ time. Thus, the total complexity is $O(n - k + k) = O(n)$.
+*   *Note:* While $O(\log n + k)$ is possible using binary search to find the starting index, this $O(n)$ two-pointer approach is often faster in practice for smaller $n$ due to lower constant overhead and better cache locality.
+
+### Space Complexity: $O(1)$ (excluding output)
+*   **Derivation:** The algorithm uses only a constant amount of extra space (`l`, `r` pointers). The space required for the return `List<Integer>` is $O(k)$, which is typically excluded from auxiliary space complexity analysis.
+
+## Component Deep Dive
+
+### 1. The Shrinking Condition: `r - l >= k`
+This condition ensures the loop terminates precisely when the window contains $k$ elements. Specifically, when `r - l + 1 == k`, the loop terminates, leaving the indices `l` and `r` as the bounds of the closest subarray.
+
+### 2. The Decision Logic: `Math.abs(x - arr[l]) <= Math.abs(x - arr[r])`
+This is the core greedy heuristic:
+*   **Tie-breaking:** The use of `<=` is critical. If the distance from $x$ to both endpoints is equal, the problem statement (standard LeetCode convention) dictates that the smaller element is preferred. Since the array is sorted, `arr[l]` is always smaller than `arr[r]`. Therefore, by removing `r` when distances are equal, we preserve the smaller element (`arr[l]`), satisfying the tie-breaking requirement.
+
+### 3. Edge-Case Handling
+*   **$k = n$:** The loop condition `r - l >= k` (where `r - l` would be `n - 1`) will be `(n - 1) >= n`, which is false. The loop never executes, and the entire array is returned correctly.
+*   **$x$ outside array range:** If $x$ is smaller than `arr[0]`, the `else` block (`l++`) will execute until `l` reaches `0` and `r` shrinks to `k-1`. If $x$ is larger than `arr[n-1]`, the `if` block (`r--`) will execute until the window sits at the end of the array. The logic handles these boundary conditions naturally without explicit checks.
+
+## Key Insights
+
+### Performance Optimization Nuances
+*   **Efficiency vs. Algorithmic Complexity:** While binary search ($O(\log n + k)$) is asymptotically superior, it involves significant branching and index calculation complexity. This $O(n)$ two-pointer approach is a "tight" loop, making it highly efficient for arrays that fit in cache.
+*   **ArrayList Allocation:** If $k$ is known to be large, initializing the `ArrayList` with `new ArrayList<>(k)` prevents internal array resizing (copying), which is a common performance bottleneck in Java collection usage.
+
+### Subtle Considerations
+*   **Integer Overflow:** The current implementation uses `Math.abs(x - arr[l])`. If `x` and `arr[l]` are near `Integer.MAX_VALUE` or `Integer.MIN_VALUE`, subtraction can overflow. While usually safe in competitive programming constraints, in production systems, one should consider using `long` for the subtraction or `Integer.compare` logic to avoid overflow risks.
+*   **The "Gap" Logic:** This solution relies on the property that the window is always contiguous. If the input array were not sorted, this approach would fail, and we would need a Min-Heap or QuickSelect strategy ($O(n)$ average, $O(n \log k)$ heap-based) to maintain the $k$ closest elements.
+
+---
