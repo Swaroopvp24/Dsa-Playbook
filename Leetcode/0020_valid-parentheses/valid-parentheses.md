@@ -117,3 +117,52 @@ Validates if a string contains correctly nested and matched parentheses, bracket
 *   **Early Exit**: Immediate `false` return if the string length is odd or if the stack underflows (e.g., `]`), ensuring $O(n)$ time complexity and $O(n)$ space complexity.
 
 ---
+
+## standard_stack_solution.java
+*Style: detailed*
+
+# Technical Reference: Balanced Parentheses Validation
+
+## Summary
+The solution implements a classic **Stack-based LIFO (Last-In, First-Out) algorithm** to validate the nesting integrity of bracket sequences. By treating opening brackets as symbols to be deferred and closing brackets as triggers to resolve the most recently pending expectation, the algorithm ensures that every closing symbol matches its corresponding opening symbol in correct structural order. The use of `ArrayDeque` serves as an efficient stack implementation, avoiding the synchronization overhead of `java.util.Stack`.
+
+## Complexity Analysis
+
+### Time Complexity: $O(n)$
+*   **Traversal:** The algorithm performs a single linear pass over the input string `s` of length $n$.
+*   **Operations:** For each character, the stack operations (`push`, `pop`, `isEmpty`) are amortized $O(1)$.
+*   **Total:** Since each character is pushed once and popped at most once, the time complexity remains linear relative to the input size.
+
+### Space Complexity: $O(n)$
+*   **Worst-Case:** In a scenario consisting entirely of opening brackets (e.g., `"((((("`), the stack grows to size $n$.
+*   **Auxiliary Space:** The `ArrayDeque` stores at most $n/2$ opening brackets in a balanced string, resulting in an $O(n)$ space requirement. The helper method `validOpen` occupies $O(1)$ stack space.
+
+---
+
+## Component Deep Dive
+
+### 1. The Stack Data Structure (`Deque<Character>`)
+The choice of `ArrayDeque` is optimal here over `java.util.Stack`. 
+*   **Performance:** `java.util.Stack` extends `Vector`, making it thread-safe and incurring unnecessary performance penalties due to locking. `ArrayDeque` is non-synchronized and provides better cache locality by using a resizable array.
+*   **Failure Modes:** 
+    *   **Underflow:** The `st.isEmpty()` check before `st.pop()` is critical. Without it, the code would throw a `NoSuchElementException` when encountering a closing bracket that has no preceding opening bracket (e.g., `"]"`).
+
+### 2. Logic Flow (`isValid`)
+*   **Classification:** The logic bifurcates based on character type. Opening characters are pushed to represent "deferred resolution." Closing characters trigger an immediate validation against the top-of-stack element.
+*   **The Mismatch Constraint:** `st.pop() != validOpen(c)` evaluates the expectation. If the stack is empty (no opening bracket exists) or the popped element is the incorrect partner, the function correctly short-circuits to `false`.
+
+### 3. The `validOpen` Helper
+*   **Mapping:** This function acts as a hard-coded lookup table. While a `Map<Character, Character>` could be used for extensibility, this implementation offers superior performance as it avoids `HashMap` hashing overhead, pointer chasing, and `Integer/Character` object wrapping (autoboxing).
+
+---
+
+## Key Insights & Nuances
+
+*   **The Final State:** The return statement `return st.isEmpty();` is the most important "silent" check. Many implementations neglect this, failing cases like `"("` where the loop finishes but an opening bracket was never closed.
+*   **Short-Circuiting:** The code uses short-circuiting logic `(st.isEmpty() || (st.pop() != ...))`. This ensures that `pop()` is never called on an empty structure, preventing runtime exceptions.
+*   **Optimization Potential:**
+    *   **Early Exit:** If `s.length()` is odd, the string cannot possibly be balanced. Adding `if (s.length() % 2 != 0) return false;` at the start of `isValid` provides an $O(1)$ optimization for roughly 50% of invalid input cases.
+    *   **Memory:** For large inputs, `ArrayDeque` resizing can trigger reallocations. If the input scale is known to be large, initializing the deque with a capacity (e.g., `new ArrayDeque<>(s.length() / 2)`) can reduce GC pressure and copy operations.
+*   **Subtle Bug/Risk:** The current implementation treats any non-closing character (anything not `}`, `)`, `]`) as an opening character. If the input string were to contain alphanumeric characters (e.g., `"(a)"`), they would be pushed onto the stack, resulting in an `isEmpty()` return of `false`. This implementation is strictly for symbol-only strings.
+
+---
