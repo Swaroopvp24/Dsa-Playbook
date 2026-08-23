@@ -52,3 +52,57 @@ is a idiomatic way to handle "look-behind" dependencies in a LIFO structure. Wit
 The current summation logic `while (!stack.isEmpty())` is destructive. If the requirement ever evolved to support queries mid-process, this approach would require a refactor to a streaming summation variable (e.g., maintaining a `runningSum` variable that is updated on every push/pop). As written, the solution is optimized for a single-pass "calculate at the end" requirement.
 
 ---
+
+## standard_stack_solution2.java
+*Style: detailed*
+
+# Technical Deep Dive: Baseball Game Score Calculator
+
+## Summary
+The solution employs a **Stack-based evaluation strategy** to process a sequence of operations that mutate a record of scores. By utilizing an `ArrayDeque` as a LIFO (Last-In-First-Out) structure, the algorithm maintains a temporal history of valid scores. This allows for $O(1)$ access to the most recent elements, which are required for calculating dependent operations (summation and doubling). The running sum is maintained incrementally, avoiding the need for a final linear pass to aggregate the scores.
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Analysis:** We perform a single iteration over the `operations` array of size $N$. 
+*   **Operations:** Inside the loop, `push`, `pop`, `peek`, and `Integer.parseInt` are all $O(1)$ operations (given that integer string parsing is bounded by the number of digits in a 32-bit integer, which is a constant $K \le 10$). Consequently, the total time complexity is linear relative to the input size.
+
+### Space Complexity: $O(N)$
+*   **Analysis:** In the worst-case scenario (e.g., a sequence consisting entirely of integer inputs), the `stack` will store $N$ elements. 
+*   **Footprint:** While `ArrayDeque` is more memory-efficient than `java.util.Stack` (as it is not synchronized and avoids the overhead of `Vector` inheritance), the heap allocation remains proportional to the number of operations.
+
+---
+
+## Component Deep Dive
+
+### 1. Data Structure Choice: `ArrayDeque`
+The use of `ArrayDeque<Integer>` over `Stack<Integer>` is a standard best practice in Java. `java.util.Stack` is legacy, thread-safe (synchronized), and incurs significant performance overhead. `ArrayDeque` provides a faster, non-thread-safe implementation backed by a resizable array, which is ideal for this single-threaded context.
+
+### 2. State Management Logic
+The algorithm maintains two distinct states:
+*   **The Stack:** Tracks the valid chronological history of scores.
+*   **The Accumulator (`res`):** A running total that eliminates the $O(N)$ overhead of summing the stack at the conclusion of the process.
+
+### 3. Handling Operation Branches
+*   **`+` (Summation):** This is the most complex operation. To avoid destroying the top of the stack, the code performs a `pop()` followed by a `peek()` to retrieve the two most recent values. It then pushes the popped value back (preserving the state) before pushing the sum.
+*   **`D` (Double):** Relies on `peek()` to retrieve the last value without removing it. This is a subtle point: if `pop()` were used instead, the history would be corrupted.
+*   **`C` (Cancellation):** Effectively "undos" the last operation by updating `res` before the element is discarded from the stack.
+
+---
+
+## Key Insights & Performance Nuances
+
+### 1. Integer Parsing Overhead
+`Integer.parseInt(s)` is called twice in the `else` block. While not critical here, in a performance-sensitive environment with massive input arrays, storing the result of `Integer.parseInt(s)` in a variable before use would be a cleaner and slightly more optimized approach.
+
+### 2. The "Pop/Push" Gymnastics
+The logic for `+` (`stack.pop()`, `stack.peek()`, `stack.push(n1)`) is a manual implementation of a "peek-two-elements-sum" pattern. This is required because `java.util.Deque` does not provide an `access-by-index` method that ignores the top element (e.g., `get(1)` is possible but less idiomatic).
+
+### 3. Edge Cases & Safety
+*   **Empty Operations:** If the input array is empty, the loop terminates immediately, returning `0`. Correct.
+*   **Invalid States:** The problem constraints imply that "C", "D", and "+" are always called when the stack has sufficient elements. If this were a production system with unvalidated input, a `NoSuchElementException` would be thrown by `pop()` or `peek()` on an empty stack. A production-ready version should include an explicit check (e.g., `if (!stack.isEmpty())`).
+
+### 4. Integer Overflow
+The solution uses `int` for `res`. If the sum of scores exceeds $2^{31}-1$, the result will overflow. Depending on the constraints (typically defined in the problem description), a `long` for the `res` variable would be a safer defensive programming choice if inputs are potentially large.
+
+---
