@@ -20,3 +20,22 @@ This code calculates the final sum of scores in a baseball game based on a seque
 *   **Summation**: Since the stack stores the final sequence, a simple `while(!stack.isEmpty())` loop is sufficient to aggregate the total result, effectively emptying the stack in the process.
 
 ---
+
+## standard_stack_solution2.java
+*Style: concise*
+
+### Notes: Baseball Game Score Calculator
+
+**Overview**
+This code tracks scores in a baseball game by processing a series of operations (`+`, `D`, `C`, or integer) stored in a `Deque`. It maintains a running total of the record while using the stack to reference historical scores needed for multi-step operations.
+
+**Key Components**
+*   `Deque<Integer> stack`: Tracks valid scores to support relative operations (`+`, `D`, `C`).
+*   `int res`: Tracks the cumulative sum of all current scores to avoid redundant stack iteration at the end.
+
+**Logic Notes**
+*   **"+" operation**: Requires popping the last element to access the second-to-last, then pushing both back. Ensure the sequence `(top + secondTop)` is pushed back onto the stack to maintain the correct state for future operations.
+*   **"C" operation**: Simple undo functionality; subtract the popped value from the running total `res` immediately.
+*   **Efficiency**: By maintaining `res` throughout the loop, the final result is calculated in $O(N)$ time with $O(N)$ space, avoiding a final $O(N)$ summation pass.
+
+---
