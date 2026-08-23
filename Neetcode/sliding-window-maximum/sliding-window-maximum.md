@@ -53,3 +53,61 @@ Since the deque stores indices, we compare the head of the deque against the `le
 *   **Performance Nuance**: The initialization `new int[nums.length - k + 1]` assumes `nums` is non-null. In production, adding an explicit `if (nums == null || nums.length == 0 || k <= 0)` guard is recommended to avoid `NullPointerException` or invalid index logic.
 
 ---
+
+## dp_solution.java
+*Style: detailed*
+
+# Deep-Dive: Block-Based Max Sliding Window
+
+## Summary
+The provided solution implements the **Block Partitioning** (or Prefix/Suffix Max) technique to solve the Sliding Window Maximum problem. Unlike the standard Monotonic Queue approach (which yields $O(N)$ time with $O(K)$ space), this approach achieves $O(N)$ time complexity while maintaining $O(N)$ space but with **improved cache locality** and no complex deque management.
+
+The algorithm divides the array into virtual blocks of size $k$. Any sliding window of size $k$ starting at index $i$ is guaranteed to span exactly two blocks or reside entirely within one. By pre-calculating the running maximum from the start of each block (`lMax`) and the end of each block (`rMax`), the maximum of any arbitrary window $[i, i+k-1]$ is simply $\max(\text{rMax}[i], \text{lMax}[i+k-1])$.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Preprocessing:** We perform two linear passes over the input array `nums` of size $N$. 
+    *   The first pass fills `lMax` in $O(N)$.
+    *   The second pass fills `rMax` in $O(N)$.
+*   **Querying:** We perform a final pass of size $N-k+1$ to populate the `result` array.
+*   **Total:** $O(N) + O(N) + O(N-K) \approx O(N)$. Each element is visited a constant number of times.
+
+### Space Complexity: $O(N)$
+*   We allocate two auxiliary arrays, `lMax` and `rMax`, each of size $N$.
+*   The `result` array takes $O(N-K)$ space.
+*   Total space is $O(N)$. While this is technically higher than the $O(K)$ space used by a Monotonic Deque, the memory access pattern is purely sequential, making it highly friendly to modern CPU cache hierarchies (prefetchers).
+
+---
+
+## Component Deep Dive
+
+### 1. `lMax` (Prefix-Block Max)
+*   **Logic:** `lMax[i]` represents $\max(nums[j \dots i])$ where $j$ is the start of the block containing $i$.
+*   **Reset Condition:** `i % k == 0`. This marks the boundary where the prefix max must be re-initialized to the current element because the prefix doesn't extend across block boundaries.
+*   **Critical Path:** Ensures that for any window end index, we have the running max from the left side of the block.
+
+### 2. `rMax` (Suffix-Block Max)
+*   **Logic:** `rMax[i]` represents $\max(nums[i \dots j])$ where $j$ is the end of the block containing $i$.
+*   **Reset Condition:** `i % k == k - 1`. This resets the suffix max at the end of every block.
+*   **Corner Case:** Handling the final block if $N$ is not perfectly divisible by $k$. Because the loop runs backwards to index 0, the last block is implicitly bounded by the array length, and the condition `i % k == k - 1` correctly anchors the suffix starting point.
+
+### 3. Window Synthesis
+*   **The Invariant:** Every window $[i, i+k-1]$ covers exactly two elements from the precomputed arrays.
+    *   `rMax[i]` captures the max from $i$ to the end of the block containing $i$.
+    *   `lMax[i + k - 1]` captures the max from the start of the block containing $i+k-1$ to $i+k-1$.
+    *   Since $i+k-1$ is at most $k-1$ distance from $i$, these two values cover the entire range $[i, i+k-1]$ without overlapping beyond what is captured by the max operation.
+
+---
+
+## Key Insights
+
+*   **Cache Efficiency:** The Monotonic Deque approach involves frequent heap/stack allocations or pointer updates and random-access behavior if implemented with a list. This approach uses two flat arrays accessed linearly, resulting in fewer cache misses and predictable memory prefetching.
+*   **When to use this:** Use this approach in performance-critical environments (like C++ or low-level Java systems) where you need to avoid the overhead of object allocations associated with `Deque` implementations (e.g., `ArrayDeque` or `LinkedList`).
+*   **Handling `k=1`:** The algorithm naturally handles $k=1$ without modification, as the block size is 1, and the max of the window is simply the element itself.
+*   **Edge Case - $N < k$:** The `for` loop `i <= n - k` ensures that if the input array is smaller than the window size, the loop body is never entered, returning an empty array correctly.
+*   **Subtle Bug:** Ensure the `rMax` loop correctly calculates `n-1` as the start. If the indices are calculated incorrectly, the boundaries between blocks will be offset, causing the "max" calculation to look into an adjacent block that is not part of the current window. The provided logic `i % k == k - 1` is robust for all $N, K$.
+
+---
