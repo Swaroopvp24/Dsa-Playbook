@@ -19,3 +19,24 @@ This code implements a LIFO (Last-In, First-Out) stack using two `Queue` objects
 *   **Performance Trade-off**: The `push` operation is O(n) because it forces a full migration of elements, but this optimizes `pop` and `top` to O(1). This is a "push-heavy" implementation.
 
 ---
+
+## queue_solution(using_one_queue).java
+*Style: concise*
+
+### Stack Implementation using a Single Queue
+
+This implementation realizes LIFO (stack) behavior using a single FIFO (queue) by rotating elements during the `push` operation.
+
+#### Key Methods
+*   `push(int)`: Inserts element, then rotates the queue so the most recently added element is at the head.
+*   `pop()`: Removes and returns the head of the queue (which is the stack's "top").
+*   `top()`: Returns the head without removing it.
+
+#### Logic Notes
+*   **Rotation Invariant:** The core logic occurs in `push` by dequeuing and re-enqueuing the first `size - 1` elements. This effectively reverses the order of the newly added element relative to existing ones, turning $O(1)$ queue insertions into $O(n)$ stack insertions.
+*   **Performance:** 
+    *   `push()`: $O(n)$
+    *   `pop()`/`top()`: $O(1)$
+    *   Space Complexity: $O(n)$
+
+---
