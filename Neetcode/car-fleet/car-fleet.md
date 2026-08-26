@@ -47,3 +47,62 @@ The logic iterates backwards from the car closest to the target to the car furth
 *   **Floating Point Comparison:** In highly precise scenarios, comparing doubles with `>` can be susceptible to IEEE 754 floating-point errors. For standard competitive programming constraints, this implementation is sufficient, but in production systems with extreme precision requirements, an epsilon (`1e-9`) should be used for comparisons.
 
 ---
+
+## space_optimized_solution.java
+*Style: detailed*
+
+# Engineering Deep Dive: Car Fleet Solution
+
+## Summary
+The "Car Fleet" problem is a classic greedy interval-scheduling derivative. The core algorithmic insight is that a car $i$ can only form a fleet with cars ahead of it (closer to the target). If a car $i$ takes less time to reach the destination than a car $j$ (where $j > i$ in position), car $i$ will eventually catch up and be constrained by $j$'s speed.
+
+The solution employs a **reverse-order greedy sweep**. By sorting cars by position and iterating from the target backwards (from the closest car to the furthest), we can maintain a "bottleneck time" (`lastTime`). If a car's time to the target is greater than the current bottleneck, it cannot catch up to the fleet ahead, necessitating the creation of a new, slower fleet.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N \log N)$
+1.  **Preprocessing ($O(N)$):** Creating the `cars` 2D array.
+2.  **Sorting ($O(N \log N)$):** The bottleneck of the algorithm. Sorting the cars by starting position is required to establish the spatial dependency of fleet formations.
+3.  **Iteration ($O(N)$):** A single linear pass through the sorted array. 
+*   **Total:** $O(N \log N + N) \approx O(N \log N)$.
+
+### Space Complexity: $O(N)$
+1.  **Data Structure ($O(N)$):** We store the `cars` array of size $N \times 2$.
+2.  **Auxiliary Space ($O(\log N)$ or $O(N)$):** Depending on the implementation of `Arrays.sort()` (Dual-Pivot Quicksort for primitives, Timsort/MergeSort for objects), the sort consumes stack space.
+*   **Total:** $O(N)$.
+
+---
+
+## Component Deep Dive
+
+### 1. Sorting Strategy
+The primary requirement is processing cars based on their distance to the target. Sorting by `position` ensures that when we iterate backwards (from `n-1` to `0`), we are effectively looking at the car closest to the target first.
+
+### 2. The Greedy Conditional: `if (time > lastTime)`
+*   **`time`**: The time required for the current car to reach the `target` given its independent velocity.
+*   **`lastTime`**: The time taken by the fleet immediately ahead.
+*   **The Logic**: If the current car's `time` is $\le$ `lastTime`, it means this car will collide with or arrive simultaneously with the fleet ahead. Because it is physically blocked, it effectively merges into that fleet. We ignore it. If `time > lastTime`, the current car is slower than the fleet ahead; it forms a new, independent fleet, and we update `lastTime` to this car's `time`.
+
+### 3. Edge Case Handling
+*   **Single Car (`n=1`)**: The loop runs once, `time > -1` is true, returns 1. Correct.
+*   **Zero/Negative Speed**: The problem constraints usually define speed $> 0$. If `speed` could be $0$, division by zero would occur; an implicit constraint check is required for robust production code.
+*   **Identical Positions**: While standard inputs usually assume distinct positions, the `Arrays.sort` handles ties stably based on the input index (though position ties are physically impossible for unique cars).
+
+---
+
+## Key Insights & Optimization Nuances
+
+### Floating Point Precision
+Using `double` for time calculations is standard here, but beware of precision issues in strict equality comparisons. The logic uses `time > lastTime` instead of `>=`. This is intentional: if `time == lastTime`, the cars arrive at the exact same moment at the target and thus belong to the same fleet. Floating point epsilon comparison (`time > lastTime + 1e-9`) is generally safer in high-precision scenarios, though standard `double` usually suffices for typical coordinate ranges.
+
+### Space Optimization
+The `cars` array is $O(N)$ space. Can we do better?
+*   We can avoid the $O(N)$ array creation if we have a way to sort the indices of `position` based on `position` values without creating the `int[][]`.
+*   Example: Create an array of indices `Integer[] idx = {0, 1, ..., n-1}`, sort `idx` using a custom comparator `(a, b) -> Integer.compare(position[a], position[b])`. This is functionally equivalent but slightly more memory-efficient if the objects were larger.
+
+### The "Stack" Concept
+The commented-out `Deque` in the provided snippet highlights the standard "Stack-based" approach. By iterating in reverse, we essentially simulate the stack's behavior without the memory overhead of the `Deque`. The variable `lastTime` acts as the `stack.peek()`. This is an **elegant space reduction** from $O(N)$ stack depth to $O(1)$ auxiliary space during the iteration phase.
+
+---
