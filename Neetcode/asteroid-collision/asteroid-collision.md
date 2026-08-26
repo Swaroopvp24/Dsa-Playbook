@@ -42,7 +42,7 @@ Because the `ArrayDeque` acts as a Last-In-First-Out (LIFO) structure, popping e
 
 ---
 
-## stack_Si.java
+## stack_simulation_solution.java
 *Style: concise*
 
 ### Study Notes: Asteroid Collision
