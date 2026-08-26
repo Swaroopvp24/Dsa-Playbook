@@ -41,3 +41,26 @@ Because the `ArrayDeque` acts as a Last-In-First-Out (LIFO) structure, popping e
 *   **Memory Efficiency:** The current approach creates a new array of size `stack.size()`. While technically $O(N)$, this is unavoidable as the size of the final array is unknown at the start of the process. An alternative would be to use a fixed-size array and a pointer to simulate the stack to avoid `Deque` object overhead, though this would provide negligible performance gains in standard JVM environments.
 
 ---
+
+## stack_Si.java
+*Style: concise*
+
+### Study Notes: Asteroid Collision
+
+#### Overview
+This solution implements a stack-based approach to determine the final state of colliding asteroids. It uses the input array as an in-place stack to achieve $O(n)$ time complexity and $O(1)$ auxiliary space (excluding the result array).
+
+#### Key Components
+*   **`stackTop` (int):** A pointer tracking the last index of the stable "stack" of asteroids that won't collide further.
+*   **Collision Logic (`while` loop):** Triggers only when a positive asteroid is at the top of the stack and a negative one arrives from the right.
+*   **Survivor Logic:** If the incoming asteroid survives the while-loop (i.e., `asteroid != 0`), it is pushed onto the stack.
+
+#### Non-Obvious Logic
+*   **In-place Stack:** By reusing the input array `asteroids[]` to store the surviving asteroids, the algorithm avoids the overhead of a standard `java.util.Stack`.
+*   **Collision Resolution:**
+    *   `asteroids[stackTop] > Math.abs(asteroid)`: The incoming asteroid is destroyed; `asteroid` is set to `0` to signal it should not be pushed.
+    *   `asteroids[stackTop] == Math.abs(asteroid)`: Both are destroyed; `stackTop` is decremented to remove the current stack element, and the incoming asteroid is effectively deleted.
+    *   `else` (Incoming wins): The stack element is popped (`stackTop--`), and the `while` loop continues to check the incoming asteroid against the next element in the stack.
+*   **Termination:** Using `Arrays.copyOfRange` is the cleanest way to trim the `asteroids` array to the length of the final stack after processing.
+
+---
