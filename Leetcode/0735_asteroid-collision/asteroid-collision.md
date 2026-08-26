@@ -58,3 +58,57 @@ A subtle point is that a standard `stack.pop()` returns elements in LIFO order. 
 *   **Memory Overhead:** For extremely large input arrays ($N > 10^7$), `int[] result` plus `ArrayDeque` internal array allocation may lead to `OutOfMemoryError`. In memory-constrained environments, one could pre-calculate the final stack size using an estimation heuristic or reuse the input array as a stack if the problem constraints allow destructive modification of the input.
 
 ---
+
+## stack_simulation_solution.java
+*Style: detailed*
+
+# Engineering Reference: In-Place Asteroid Collision Resolution
+
+## Summary
+The solution implements a **linear-time stack-based simulation** to resolve asteroid collisions. By leveraging the input array itself as a stack, the algorithm achieves $O(1)$ auxiliary space complexity (excluding the output). 
+
+The algorithmic core relies on a greedy state machine: asteroids move toward each other only when a positive-velocity asteroid is followed by a negative-velocity asteroid. The simulation resolves these interactions iteratively, effectively filtering the input stream to maintain only the "surviving" asteroids.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Proof:** Although the code contains a `while` loop nested within a `for` loop, each asteroid is pushed onto the "stack" exactly once and popped from it at most once. The `asteroid` variable is only processed through the collision logic until it is either destroyed or pushed. Thus, the total number of operations is bounded by $2N$.
+*   **Amortized analysis:** Each element participates in a finite number of comparisons, ensuring linear scaling regardless of collision frequency.
+
+### Space Complexity: $O(1)$ (Auxiliary)
+*   **Reasoning:** The algorithm utilizes the input array `asteroids` as the underlying storage for the stack. The pointer `stackTop` tracks the current stack height. Since no additional data structures (like `java.util.Stack` or `ArrayList`) are instantiated, the space complexity remains constant relative to the input size. 
+*   **Note:** The return value `Arrays.copyOfRange` creates a new array of size $M$ (where $M \le N$), but this is considered output space, not auxiliary space.
+
+---
+
+## Component Deep Dive
+
+### 1. In-Place Stack Management
+The variable `stackTop` serves as the stack pointer. By initializing it to `-1`, the code treats the existing array as a dynamic stack buffer.
+*   `asteroids[++stackTop] = asteroid` performs an atomic "push" and increment.
+*   `stackTop--` performs an atomic "pop."
+
+### 2. The Collision Logic (State Machine)
+The `while` loop condition `(stackTop >= 0 && asteroids[stackTop] > 0 && asteroid < 0)` acts as a guard clause for the only state that triggers a collision: a right-moving asteroid (positive) encountering a left-moving one (negative).
+
+*   **Case 1: Stack Top Wins (`asteroids[stackTop] > abs(asteroid)`):** The incoming asteroid is annihilated. The loop breaks, and the stack remains unchanged.
+*   **Case 2: Mutual Annihilation (`==`):** Both asteroids are removed. The stack is popped, and the incoming asteroid is set to `0` to signal it should not be pushed.
+*   **Case 3: Incoming Wins:** The stack is popped, and the `while` loop continues to check if the new `stackTop` also collides with the (still existing) incoming asteroid.
+
+### 3. Edge-Case Handling
+*   **Empty Input:** If `asteroids` is empty, `stackTop` remains `-1`, and the method returns an empty array.
+*   **Zero Velocity:** The logic inherently ignores `0` velocity asteroids. Since they are neither positive nor negative, they never enter the `while` loop collision logic, ensuring they are treated as static entities that bypass interactions.
+*   **Sequential Directionality:** The logic correctly handles cases where multiple asteroids of the same direction are processed sequentially (e.g., `[-1, -2]`), as the loop condition `asteroids[stackTop] > 0` will fail immediately.
+
+---
+
+## Key Insights
+
+*   **The "Destruction Signal":** The use of `asteroid = 0` as a sentinel value is a clever optimization. It cleanly communicates that the incoming asteroid has been neutralized, preventing it from being added to the stack without requiring a flag variable or complex `if/else` branching.
+*   **Memory Efficiency:** By performing the operation in-place, the algorithm avoids heap allocations during the simulation phase. This is critical in high-throughput or memory-constrained systems (e.g., embedded systems or massive-scale data processing).
+*   **Subtle Bug Caution:** A common mistake in this pattern is failing to account for the `asteroid` being destroyed *after* popping the stack but *before* the next comparison. The current implementation correctly maintains the state of the incoming asteroid, allowing it to "continue" its trajectory against the next item in the stack.
+*   **Optimization Potential:** If the input array is strictly immutable, a `Deque` would be required, elevating space complexity to $O(N)$. The in-place mutation assumes ownership of the `asteroids` array is permitted. If input preservation is required, an explicit stack buffer must be allocated, reverting the space complexity to $O(N)$.
+
+---
