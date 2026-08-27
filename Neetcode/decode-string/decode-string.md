@@ -56,3 +56,68 @@ The final construction phase (`result.insert(0, stack.pop())`) repeats the same 
 *   **Memory Overhead:** Storing `String` objects for every character in `stack.push(String.valueOf(currentChar))` creates significant memory overhead due to object headers in the JVM. For high-throughput scenarios, using a `char[]` or a `Deque<Character>` for raw input and a `StringBuilder` for temporary segments would significantly reduce GC pressure.
 
 ---
+
+## optimal_stack_solution.java
+*Style: detailed*
+
+# Technical Deep-Dive: String Decoding Algorithm
+
+## Summary
+The solution employs a **dual-stack parsing strategy** to process nested string encodings of the form `k[encoded_string]`. By decoupling the repetition frequency (`k`) from the string context, the algorithm effectively treats the problem as a depth-first traversal of a nested structure. It uses an iterative approach to simulate an explicit recursion stack, avoiding potential `StackOverflowError` overhead while maintaining the state necessary to reconstruct deep, nested concatenations upon encountering the `]` delimiter.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(S + N \cdot m)$
+*   **$S$**: The length of the input string.
+*   **$N$**: The number of nested groupings.
+*   **$m$**: The average repetition count.
+*   **Why**: We iterate through the input string once ($O(S)$). However, the string construction within the `]` block involves repeated appending. In the worst-case (deeply nested strings), the total number of characters produced can be exponential relative to the input length. The cost is bounded by the total length of the final decoded string.
+
+### Space Complexity: $O(D + M)$
+*   **$D$**: Maximum nesting depth of brackets.
+*   **$M$**: Total characters stored in the stacks during intermediate processing.
+*   **Why**: The `previousStrings` stack grows proportionally to the depth of nested brackets. The `currentString` `StringBuilder` holds intermediate segments. In a worst-case scenario (e.g., `1[1[1[a]]]`), the stack size is proportional to the nesting level.
+
+---
+
+## Component Deep Dive
+
+### 1. The Dual-Stack State Management
+*   **`previousStrings` (Stack<String>)**: Captures the "prefix" context. When entering a new bracketed scope, the work-in-progress string must be preserved because the current scope is a child of the outer scope.
+*   **`repeatCounts` (Stack<Integer>)**: Manages the multiplier for the imminent inner string. By pushing `currentNumber` at the `[` boundary, we maintain the scope-specific frequency.
+
+### 2. The Finite State Machine (Implicit)
+The logic transitions through four explicit states based on character type:
+*   **Digit**: Accumulates numeric value. Note the `currentNumber * 10 + (ch - '0')` logic; this handles multi-digit numbers (e.g., `12[a]`) correctly, which a simple `char` conversion would miss.
+*   **`[`**: Performs a state push. The current progress is "frozen" into the stack, and the builder is reset to begin a new scope.
+*   **`]`**: Performs the "collapse" operation. This is where the heavy lifting occurs:
+    1.  The inner scope is finalized.
+    2.  The parent scope is popped from `previousStrings`.
+    3.  The repeated multiplication occurs via `StringBuilder.append()` in a loop.
+*   **Characters**: Standard character ingestion into the active scope.
+
+### 3. Edge-Case Handling
+*   **Multi-digit numbers**: The algorithm correctly handles `k >= 10` by shifting the magnitude of `currentNumber` before adding the next digit.
+*   **Nested structures**: Because it uses a stack, `3[a2[c]]` correctly processes `c` into `cc`, then combines with `a` to get `acc`, and finally triples it to `accaccacc`.
+*   **No nesting**: A string like `abc` functions correctly as the stack remains empty and the character appends directly to the primary builder.
+
+---
+
+## Key Insights
+
+### Performance Nuance: StringBuilder Efficiency
+While using `StringBuilder` is more efficient than `String` concatenation, the `for` loop `currentString.append(decodedPart)` can be a hotspot. 
+*   **Optimization Opportunity**: For very large repeat counts, calling `append` in a loop may cause frequent `StringBuilder` resizing (internal buffer doubling). If performance constraints are extreme, one could pre-calculate the required capacity and use a `char[]` buffer or a more sophisticated string-building primitive.
+
+### The "Reset" Trap
+Observe the order of operations in the `[` case:
+1.  Push `currentString` to stack.
+2.  Reset `currentString = new StringBuilder()`.
+If the order were reversed, the current context would be lost or overwritten before being saved. The explicit separation of the *builder* from the *stack* is the crucial pattern that prevents state pollution across scopes.
+
+### Subtle Potential Bug
+If the input format is invalid (e.g., mismatched brackets), the current code will likely throw an `EmptyStackException` on a `pop()` or leave the result in an incomplete state. In a production environment, adding a `peek()` or `isEmpty()` check before `pop()` is highly recommended to provide descriptive parsing errors.
+
+---
