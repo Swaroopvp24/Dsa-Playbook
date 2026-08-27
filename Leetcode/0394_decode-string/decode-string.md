@@ -52,3 +52,60 @@ The critical logic triggers upon encountering the closing bracket.
     *   The `stack.peek().equals("[")` check is robust, but string comparisons in Java have a small overhead. Given the constrained alphabet, a character-based approach using a `Stack<Object>` or two separate stacks (one for counts, one for strings) is often faster as it avoids wrapping characters into `String` objects entirely.
 
 ---
+
+## optimal_stack_solution.java
+*Style: detailed*
+
+# Technical Deep-Dive: Nested String Decoder
+
+## Summary
+The solution employs a **Two-Stack Traversal** algorithm to handle nested structures, effectively mimicking an explicit recursion stack. By maintaining state for both the "prefix" string (the buffer before a bracket) and the "multiplier" (the repeat count), the algorithm transforms a recursive expansion problem into an iterative process. It treats the input as a stream, building the result bottom-up as it encounters closing brackets (`]`), ensuring that inner-most segments are expanded before outer-most ones.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(S + N \cdot m)$
+*   **$S$**: The total number of characters in the original input string. We iterate through the string exactly once.
+*   **$N \cdot m$**: Where $N$ is the number of characters in the output string, and $m$ is the average number of operations per character. 
+*   **Reasoning**: While it seems linear, the `StringBuilder.append()` operations inside the nested loop create the final string. In a deeply nested case (e.g., `2[2[a]]`), characters are copied multiple times as the stack unwinds. The time complexity is technically proportional to the total length of the expanded output string.
+
+### Space Complexity: $O(D + M)$
+*   **$D$**: The maximum nesting depth of the brackets. This governs the maximum size of the `previousStrings` and `repeatCounts` stacks.
+*   **$M$**: The space required for the `StringBuilder` to store the intermediate and final strings.
+*   **Reasoning**: In the worst-case scenario (e.g., `100[a]`), the stack space is negligible, but the heap allocation for the `StringBuilder` tracks the accumulated length of the decoded string.
+
+---
+
+## Component Deep Dive
+
+### 1. State Management (The Two Stacks)
+*   **`previousStrings` (Stack<String>)**: Stores the "context" before a bracket. When the parser encounters `[`, it captures whatever has been accumulated thus far. This acts as the return address in a recursive call.
+*   **`repeatCounts` (Stack<Integer>)**: Stores the multiplier associated with the current scope.
+*   **Edge Case Handling**: By resetting `currentNumber` and `currentString` immediately after pushing to the stacks upon encountering `[`, the algorithm cleanly isolates the scope for the next nested substring.
+
+### 2. The Unwinding Mechanism (The `]` Logic)
+*   When `]` is reached, the algorithm treats it as a "Reduce" operation. 
+*   **Restoration**: It restores the outer scope (`previousStrings.pop()`) and merges the fully expanded inner scope into it.
+*   **Performance Note**: `currentString = new StringBuilder(previousStrings.pop())` is crucial. It keeps the prefix in a mutable `StringBuilder` to allow the subsequent `append()` operations for the inner string expansion to be efficient.
+
+### 3. Digit Accumulation
+*   `currentNumber = currentNumber * 10 + (ch - '0')`
+*   This handles multi-digit multipliers (e.g., `12[a]`). Because `currentNumber` is reset at `[` (the start of a bracket), it prevents cross-contamination between nested digits.
+
+---
+
+## Key Insights & Performance Nuances
+
+### String Immutability and Memory Pressure
+Using `StringBuilder` inside the loop is the correct approach to avoid the $O(N^2)$ penalty associated with immutable `String` concatenation in Java. However, note that `currentString.append(decodedPart)` inside a loop `repeatCount` times will perform many internal buffer reallocations if the total length is large. If the output string is massive, `StringBuilder.ensureCapacity()` could be an optimization, though difficult to calculate dynamically here.
+
+### The "Bottom-Up" Nature
+The algorithm works because the input format is strictly delimited. By resolving the inner `[...]` first, the output of the inner block effectively becomes a "normal character" block for the outer `[...]`. This reduces the problem to a simple concatenation task once the inner expansion is complete.
+
+### Potential Edge Cases to Watch
+*   **No brackets**: The code handles strings like "abc" correctly because they simply fall into the `else` block and are appended to `currentString`.
+*   **Consecutive blocks**: The current implementation supports `a3[b]2[c]` because the `previousStrings` stack is empty during the "a" phase, and "a" is kept in the base `currentString` buffer. 
+*   **Stack Overflow**: If the input has excessive nested brackets (e.g., thousands of deep `1[1[...]]`), one could hit `StackOverflowError` in a recursive implementation, but this **iterative** approach is only limited by the JVM heap size, making it robust for extreme nesting depths.
+
+---
