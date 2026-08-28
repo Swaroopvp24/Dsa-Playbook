@@ -58,3 +58,48 @@ Using `ArrayDeque` is a best practice here. `java.util.Stack` is synchronized (t
 *   **Input Constraints:** This implementation assumes the input string contains only valid characters for a filesystem. If the input includes null characters or prohibited filesystem characters (like `\0`), those would be treated as valid directory names, potentially leading to discrepancies with actual OS-level `realpath()` implementations.
 
 ---
+
+## standard_stack_solution_cleaner.java
+*Style: detailed*
+
+# Engineering Deep-Dive: Canonical Path Simplification
+
+## Summary
+The solution implements a stack-based canonicalization algorithm to resolve Unix-style file system paths. By treating the path as a sequence of tokens separated by the delimiter `/`, the algorithm processes the input in a single pass. It utilizes a `Deque` (Double Ended Queue) as a stack to maintain the "current directory" state, effectively handling relative navigation (`..`) by popping the stack and ignoring no-op tokens (`.` and empty strings resulting from trailing/consecutive slashes).
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Splitting:** The `String.split("/")` operation performs a full scan of the input string of length $N$, resulting in $O(N)$ time and space for the array of substrings.
+*   **Processing:** We iterate through the $K$ directories produced by the split. Each operation (push, pop, string comparison) is $O(1)$. 
+*   **Reconstruction:** `String.join` iterates through the stack elements, totaling $O(N)$ as the sum of all directory names is bounded by the original path length.
+*   **Total:** $O(N)$, where $N$ is the length of the input path.
+
+### Space Complexity: $O(N)$
+*   **Storage:** In the worst-case scenario (e.g., `/a/b/c/d/e`), the stack stores all segments of the path, consuming $O(N)$ memory.
+*   **Intermediate:** The `String[]` array created by `split` also occupies $O(N)$ space in the heap.
+
+## Component Deep Dive
+
+### 1. Tokenization Logic (`path.split("/")`)
+The `split` method handles consecutive slashes (e.g., `///`) by producing empty strings (`""`) between delimiters. The logic explicitly checks `!directory.isEmpty()` to treat these as no-ops, preventing erroneous directory creation.
+
+### 2. The Stack Mechanism (`ArrayDeque`)
+*   **`..` (Parent Directory):** The implementation performs a safety check `!stack.isEmpty()` before calling `pop()`. This correctly handles root-level traversal attempts (e.g., `/../` remains `/`), preventing `NoSuchElementException`.
+*   **`.` (Current Directory):** Explicitly ignored, as it effectively means "stay where you are."
+*   **Named Directories:** Any non-empty, non-`.` token is pushed, representing a traversal deeper into the file system hierarchy.
+
+### 3. Path Reconstruction (`String.join` and `reversed()`)
+The use of `stack.reversed()` (introduced in modern Java) is a critical optimization for readability. It avoids an explicit `LinkedList` reversal or `Collections.reverse()` call, allowing the `join` method to traverse the stack in the correct order (bottom-to-top) to construct the canonical path.
+
+## Key Insights & Nuances
+
+*   **Memory Efficiency:** While `split("/")` is idiomatic and clean, it creates an intermediate array and multiple string objects. For extremely large paths, a custom pointer-based iterator that extracts tokens without creating an array would reduce the garbage collector (GC) pressure to $O(1)$ auxiliary space.
+*   **The Root Case:** An empty stack after processing results in `String.join` returning an empty string. The prepend `"/"` ensures that the root path is always represented as `/`, correctly handling the empty input or inputs that resolve back to the root.
+*   **Edge Cases:**
+    *   **Multiple Slashes:** `/a//b` is correctly handled as `/a/b` due to the `directory.isEmpty()` filter.
+    *   **Trailing Slashes:** `/a/b/` is handled because the final `/` creates an empty token, which is discarded.
+    *   **Deep Parent Traversal:** `../../` correctly resolves to `/` because the stack remains empty after multiple `pop()` calls, preventing underflow.
+*   **Immutability:** String concatenation via `String.join` is efficient in modern Java, as it calculates the required buffer size before allocation, unlike repeated string addition (`+` operator) inside a loop, which would result in $O(N^2)$ time complexity due to immutability.
+
+---
