@@ -19,7 +19,7 @@ This implementation performs a $O(\log n)$ search in a rotated sorted array by f
 
 ---
 
-## optima.java
+## optimaal_binary_search.java
 *Style: concise*
 
 ### Study Notes: Rotated Sorted Array Search
