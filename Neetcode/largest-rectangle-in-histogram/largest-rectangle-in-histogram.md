@@ -106,3 +106,53 @@ After the primary loop, the stack might contain bars that never encountered a "s
     *   **Monotonically decreasing:** Each new element forces the entire stack to pop, keeping the stack size minimal and computing area at each step.
 
 ---
+
+## optimal_stack_solution.java
+*Style: detailed*
+
+# Engineering Deep Dive: Largest Rectangle in Histogram
+
+## 1. Summary
+This implementation utilizes a **Monotonic Increasing Stack** to solve the "Largest Rectangle in Histogram" problem in linear time. The core algorithmic technique relies on identifying the "nearest smaller element" to the left and right of every bar in the array. 
+
+By maintaining a stack of indices representing heights in non-decreasing order, we ensure that when we encounter a bar smaller than the current stack top, we have defined the **Right Boundary** for the popped element. The **Left Boundary** is implicitly defined by the element residing beneath the popped element in the stack. This single-pass calculation avoids the $O(n^2)$ overhead of a brute-force approach, effectively treating each bar as the "shortest" height of a potential rectangle.
+
+---
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(n)$
+*   **Analysis:** Although there is a nested `while` loop within a `for` loop, each index from the input `heights` array is pushed onto the stack exactly once and popped from the stack exactly once. 
+*   **Total Operations:** Since each element undergoes a constant number of operations (push/pop), the amortized time complexity is $O(n)$.
+
+### Space Complexity: $O(n)$
+*   **Analysis:** In the worst-case scenario—an array of strictly increasing heights—all $n$ indices will be pushed onto the stack before the terminal iteration (the virtual index `n`). 
+*   **Memory Footprint:** The `ArrayDeque` stores at most $n$ integers, leading to a space complexity of $O(n)$.
+
+---
+
+## 3. Component Deep Dive
+
+### The Virtual Sentinel (i == n)
+The logic `i == n` serves as a "flushing" mechanism. By treating the end of the array as a bar with a height of `0`, we force the monotonic stack to pop all remaining elements. This ensures that any rectangle that could have extended to the very end of the array is properly evaluated. Without this, the final sequence of increasing bars would remain in the stack and never calculate their potential area.
+
+### Boundary Logic (The Width Calculation)
+The calculation `width = i - stack.peek() - 1` is the crux of the algorithm:
+1.  **Right Boundary:** `i` is the first index where `heights[i] < heights[popped_index]`.
+2.  **Left Boundary:** After popping, `stack.peek()` is the index of the nearest element to the left that is smaller than (or equal to) the popped height.
+3.  **Width:** The rectangle spans from `left_boundary + 1` to `right_boundary - 1`. The arithmetic `i - (left_idx) - 1` correctly captures this range.
+4.  **Empty Stack Edge Case:** If the stack becomes empty after popping, it implies the popped height was the minimum encountered so far. Therefore, the rectangle spans the entire width from `0` to `i-1`. Using `i` as the width in this case is the mathematically correct identity.
+
+### Stack Invariant
+The stack maintains `heights[stack.peek()] <= heights[i]`. If this invariant is violated, the current height is "smaller," meaning the bars on top of the stack can no longer expand rightward. This triggers the area calculation for the bars that have been constrained.
+
+---
+
+## 4. Key Insights
+
+*   **Handling Equal Heights:** Note the condition `heights[stack.peek()] >= heights[i]`. Using `>=` (instead of strict `>`) is a subtle optimization that simplifies the logic. If duplicate heights exist, we calculate the area for the leftmost duplicate redundantly or effectively ignore it until the subsequent pop. This is safe and prevents unnecessary stack growth.
+*   **ArrayDeque vs. Stack:** The choice of `ArrayDeque` over the legacy `Stack` class is standard practice in Java. `Stack` is synchronized (introducing unnecessary overhead) and extends `Vector`, making `ArrayDeque` the faster, preferred stack implementation for single-threaded algorithms.
+*   **Index Management:** The code avoids pushing `n` onto the stack (`if (i < n) { stack.push(i); }`). This is critical; pushing `n` would cause an `ArrayIndexOutOfBoundsException` on subsequent `heights[stack.peek()]` calls during the logic flow.
+*   **Failure Modes:** A common pitfall in similar implementations is failing to correctly handle the "empty stack" case after a pop. Ensure you differentiate between "stack was empty before pop" (not possible here due to `while` condition) and "stack became empty after pop" (handled by the `stack.isEmpty()` ternary).
+
+---
