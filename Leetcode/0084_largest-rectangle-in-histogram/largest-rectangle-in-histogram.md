@@ -95,3 +95,57 @@ A common mistake is using `i` as the index in the stack. By storing the `startIn
 Using `ArrayDeque` is preferable to `Stack` in Java as it avoids the synchronized overhead of the legacy `java.util.Stack` class, providing better performance in high-throughput scenarios. The use of `int[]` for the pair is memory-efficient; however, in extremely memory-constrained environments, one could pack two integers into a single `long` to avoid the object overhead of the array allocation.
 
 ---
+
+## optimal_stack_solution.java
+*Style: detailed*
+
+# Engineering Reference: Largest Rectangle in Histogram
+
+## 1. Summary
+The implementation utilizes a **Monotonic Increasing Stack** to solve the "Largest Rectangle in Histogram" problem in linear time. The core algorithmic technique relies on the observation that the largest rectangle with a bar of height $H$ as its shortest member extends as far left and as far right as possible until a bar with height $< H$ is encountered. 
+
+By maintaining a stack of indices corresponding to strictly increasing heights, the algorithm defers calculating the area of a bar until it encounters a "right boundary" (a bar shorter than the current stack top). This allows the algorithm to determine the width of rectangles in $O(1)$ amortized time per bar.
+
+---
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(n)$
+*   **Each element is pushed once and popped at most once.** 
+*   Even though there is a `while` loop nested within the `for` loop, the inner loop operation `stack.pop()` is conditioned on the total number of items pushed. Across the entire execution, there are exactly $n$ pushes and $n$ pops, resulting in $2n$ operations. This yields a linear amortized time complexity.
+
+### Space Complexity: $O(n)$
+*   In the worst-case scenario (a strictly increasing sequence of heights), the stack will hold all $n$ indices. Thus, the auxiliary space requirement is $O(n)$.
+
+---
+
+## 3. Component Deep Dive
+
+### The "Virtual Boundary" Strategy
+The algorithm appends a virtual height of `0` at index `n`. This is a critical pattern in monotonic stack problems. It forces the stack to "flush" all remaining elements, ensuring that even if the input array is sorted in ascending order (where no right-boundary condition is met during the main loop), the remaining rectangles are calculated.
+
+### The Width Calculation Logic
+For a height $H$ at index $P$ (the popped element):
+1.  **Right Boundary ($R$):** The index $i$ that triggered the pop.
+2.  **Left Boundary ($L$):** The index currently at the top of the stack (after $P$ is popped). 
+3.  **The width formula:** `width = i - stack.peek() - 1`.
+    *   If the stack is empty after the pop, it implies that the popped bar was the minimum height encountered so far, meaning the rectangle extends from index `0` to $i-1$. Thus, `width = i`.
+    *   Otherwise, the range is $(stack.peek(), i)$, excluding both boundaries, resulting in $i - (stack.peek() + 1)$.
+
+### Edge Case Handling
+*   **Empty Array:** The loop condition `i <= n` handles arrays of size 0 gracefully, returning `maxArea = 0`.
+*   **Strictly Increasing/Decreasing Inputs:** 
+    *   *Increasing:* The stack grows until `i == n`, then pops everything.
+    *   *Decreasing:* Every new element triggers a pop, calculating local maxima continuously.
+*   **Duplicate Heights:** The use of `>=` in `heights[stack.peek()] >= heights[i]` ensures that duplicate heights are processed correctly as right boundaries, preventing erroneous width calculation for identical values.
+
+---
+
+## 4. Key Insights & Nuances
+
+*   **The Stack Invariant:** The stack must strictly store indices of increasing heights. The condition `heights[stack.peek()] >= heights[i]` maintains this. If you were to use `>` instead of `>=`, you might fail to correctly calculate the width of identical adjacent bars because the algorithm would treat the first occurrence of a height as "still valid" when a subsequent identical height arrives.
+*   **Index-Only Storage:** Storing only indices (`ArrayDeque<Integer>`) is more memory-efficient than storing custom objects or tuples (e.g., `Pair<Integer, Integer>`). Since the input array is accessible within the scope, the `heights` values are always retrievable via `heights[index]`.
+*   **Performance Optimization:** `ArrayDeque` is preferred over `Stack` in Java. `Stack` extends `Vector`, which is synchronized (thread-safe); the overhead of internal synchronization is unnecessary here and degrades performance compared to the non-synchronized `ArrayDeque`.
+*   **Subtle Logic Trap:** The most common mistake in this implementation is calculating the area *before* popping or incorrectly handling the `i == n` case. Always ensure the "Right Boundary" logic is processed first; the current structure correctly handles this by using the `i == n` OR condition to trigger the `while` loop, effectively clearing the stack at the end of the input stream.
+
+---
