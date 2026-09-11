@@ -47,3 +47,50 @@ The central branching logic relies on the slope of the neighborhood:
     This eliminates edge-case branching and simplifies the core logic into a single `if/else` block, improving instruction pipelining and readability.
 
 ---
+
+## attempt_1.java
+*Style: detailed*
+
+# Technical Deep-Dive: Peak Element Discovery (Binary Search)
+
+## 1. Summary
+The `findPeakElement` implementation employs a **binary search on the index space** to identify a local maximum in $O(\log n)$ time. The fundamental algorithmic insight is that a peak is guaranteed to exist in any sub-array if the array is unsorted and we treat boundary conditions as $-\infty$. By comparing the midpoint `m` with its immediate right neighbor `m+1`, we determine the "slope." If `nums[m+1] > nums[m]`, we are on an upward slope, and a peak must exist to the right. Otherwise, the peak is at `m` or to its left.
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(\log n)$
+*   **Derivation**: In every iteration, the search space `[l, r]` is halved (`r - l` becomes approximately half). 
+*   **Reasoning**: Since we perform a constant time comparison at each step and reduce the problem size exponentially, the recurrence relation is $T(n) = T(n/2) + O(1)$, which resolves to logarithmic time.
+
+### Space Complexity: $O(1)$
+*   **Derivation**: The algorithm uses a fixed amount of extra space (three integer variables: `l`, `r`, and `m`) regardless of the input array size.
+*   **Reasoning**: This is an iterative approach; no recursion stack is utilized, maintaining optimal constant auxiliary space.
+
+## 3. Component Deep Dive
+
+### The Search Logic (`if-else` branch)
+*   **`nums[m + 1] > nums[m]`**: This signifies the array is increasing at this point. Because we define the values outside the array bounds as $-\infty$, if the array is increasing at `m`, a peak *must* exist in the range `[m+1, n-1]`.
+*   **The Implicit Else**: When `nums[m + 1] <= nums[m]`, the peak could be `m` itself or somewhere to the left. By setting `r = m`, we maintain the search range inclusive of `m`.
+
+### Boundary/Edge Case Handling
+*   **Single Element Arrays**: If `nums.length == 1`, `l` and `r` both equal `0`. The `while` loop condition `l < r` fails immediately, and the function correctly returns index `0`.
+*   **Strictly Increasing/Decreasing Sequences**: 
+    *   If strictly increasing, the logic will shift `l` until `l == r == n-1`, correctly identifying the last element as the peak.
+    *   If strictly decreasing, the logic will shift `r` until `l == r == 0`, correctly identifying the first element as the peak.
+*   **Two Elements**: The loop runs once, comparing `nums[0]` and `nums[1]`, effectively choosing the larger of the two.
+
+## 4. Key Insights
+
+### Midpoint Selection
+Using `int m = l + (r - l) / 2` is critical for preventing integer overflow. While `(l + r) / 2` is common, it fails if `l + r` exceeds `Integer.MAX_VALUE`. The provided implementation is robust for large arrays.
+
+### The "Loop Invariant" Strategy
+The algorithm maintains the invariant that the search space `[l, r]` always contains at least one peak. 
+*   When `l < r`, we calculate `m` as `l + (r - l) / 2`. 
+*   Since `l < r`, `m` is guaranteed to be strictly less than `r`, ensuring `m + 1` is a valid index. This prevents an `ArrayIndexOutOfBoundsException` without requiring explicit index checks.
+
+### Subtle Considerations
+*   **Multiple Peaks**: The problem statement asks for *any* peak element. This binary search approach is "greedy" in its movement toward higher values; it will converge to the first peak it encounters that satisfies the condition, which is sufficient per the problem constraints.
+*   **Efficiency**: This is the theoretical lower bound for this problem. Any algorithm attempting to find a peak without evaluating all elements must use a partitioning strategy, as linear scanning would result in $O(n)$.
+
+---
