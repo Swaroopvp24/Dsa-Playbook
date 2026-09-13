@@ -61,3 +61,61 @@ Using an `ArrayList` is significantly faster than using a `TreeMap` in Java. `Tr
 The `get` method returns an empty string `""` for missing data. If the application environment allows `""` as a valid user-defined value, there is an ambiguity between "value not found" and "value is empty." In a production system, returning `Optional<String>` or throwing a custom `NotFoundException` might be more robust.
 
 ---
+
+## standard_binary_search_2.java
+*Style: detailed*
+
+# Technical Reference: `TimeMap` Implementation
+
+## Summary
+The `TimeMap` implements a versioned key-value store supporting non-strictly increasing timestamp queries. It utilizes a **hash-map backed adjacency list** structure, where each key maps to an `ArrayList` of `Pair<Timestamp, Value>`. 
+
+The core algorithmic strategy relies on the **monotonicity of timestamps** (assuming `set` operations for a single key are called with non-decreasing timestamps). By maintaining a sorted list of pairs per key, the `get` operation is reduced to an **Upper Bound Binary Search** (or "floor" search), allowing for logarithmic retrieval of versioned state.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity
+*   **`set(key, value, timestamp)`**: **O(1)** amortized. 
+    *   The `HashMap` provides O(1) access. Appending to an `ArrayList` is O(1) amortized, provided no internal array resizing occurs.
+*   **`get(key, timestamp)`**: **O(log N)**, where $N$ is the number of historical values associated with the specific key.
+    *   The algorithm performs a binary search over the `ArrayList`. Since the search space is halved every iteration, the complexity is logarithmic relative to the history length of that key.
+
+### Space Complexity
+*   **O(K + V)**, where $K$ is the number of unique keys and $V$ is the total number of `set` operations performed across all keys. 
+    *   Each unique key consumes memory for the map entry and its associated `ArrayList`. Each `set` invocation creates one `Pair` object and stores it in the list.
+
+---
+
+## Component Deep Dive
+
+### 1. Storage Schema (`Map<String, List<Pair<...>>>`)
+*   **Design Choice**: Using `ArrayList` is optimal here because we require index-based access for binary search. A `LinkedList` would degrade `get()` to $O(N)$.
+*   **Memory Overhead**: `Pair` objects are heap-allocated. For massive datasets, consider primitive arrays (e.g., `int[]` for timestamps and `String[]` for values) to improve cache locality and reduce object header overhead.
+
+### 2. Search Logic (`get` method)
+*   **The Binary Search Pattern**: The algorithm uses a "Floor Search." 
+    *   When `currentTimestamp <= timestamp`, we record the value and perform `left = middle + 1`. This is the critical step: we greedily move to the right half of the search space to find the *largest* valid timestamp, effectively performing a right-biased binary search.
+*   **Boundary Conditions**:
+    *   **Key Miss**: If the key does not exist, `getOrDefault` returns an empty list, and the `while` loop condition `left <= right` is immediately false, returning the default `""`. This elegantly avoids null pointer exceptions.
+    *   **Timestamp Miss**: If all stored timestamps are greater than the query timestamp, `result` remains an empty string, which is the expected behavior.
+
+---
+
+## Key Insights
+
+### The "Non-Decreasing" Assumption
+This implementation implicitly assumes that for a given key, `set` operations occur with monotonically increasing timestamps. 
+*   **If timestamps arrive out of order**: The binary search will return incorrect results because the `ArrayList` will not be sorted. To support unsorted inputs, one would need to call `Collections.sort()` after every `set`, degrading performance to $O(N \log N)$ or $O(N)$ (if using Timsort on nearly sorted data).
+
+### Potential Optimizations
+1.  **Memory Pooling**: If the `TimeMap` experiences high churn, object pooling for `Pair` objects can reduce GC pressure.
+2.  **Primitive Collections**: Use libraries like *fastutil* or *Trove* for `IntObjectMap` structures to avoid boxing `Integer` timestamps into `Pair` objects, significantly reducing the memory footprint.
+3.  **Concurrency**: The current implementation is **not thread-safe**. In a multi-threaded environment, replacing `HashMap` with `ConcurrentHashMap` and the internal `ArrayList` with a thread-safe variant or using `ReentrantReadWriteLock` would be necessary. 
+
+### Subtle Pitfalls
+*   **`computeIfAbsent`**: This is efficient, but note that it performs an atomic check-and-insert on the map. This is safer than manual `containsKey` checks, which are susceptible to race conditions in concurrent contexts (even though this specific implementation is not thread-safe).
+*   **Array Resizing**: The `ArrayList` uses an internal array that grows exponentially. During extreme high-volume `set` operations, the reallocation and copying cost may cause transient latency spikes. If the number of updates per key is known in advance, initializing the `ArrayList` with a specific capacity can mitigate this.
+
+---
