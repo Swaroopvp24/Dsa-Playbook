@@ -56,3 +56,71 @@ The `findPeakIndex` loop logic is inherently safe against `ArrayIndexOutOfBounds
 *   **Integer Overflow:** The calculation `int middle = left + (right - left) / 2` is used instead of `(left + right) / 2`. This is a critical defensive coding practice to prevent overflow when dealing with extremely large index values.
 
 ---
+
+## standard_binary_search(cache).java
+*Style: detailed*
+
+# Deep Dive: Finding a Target in a Mountain Array
+
+## 1. Summary
+The problem requires finding the minimum index of a `target` within a "mountain array"—a sequence that strictly increases to a peak element and then strictly decreases. 
+
+**Algorithmic Technique:** The solution employs **Three-Phase Binary Search**. Since the array is bitonic, it cannot be searched using a standard binary search. Instead, we decompose the search space by:
+1. Identifying the peak index using a variation of binary search ($O(\log N)$).
+2. Performing a standard binary search on the ascending left partition.
+3. Performing a modified binary search on the descending right partition.
+
+The `valueCache` acts as a memoization layer to adhere to the strict `MountainArray.get()` call constraints, preventing redundant API requests during the search phases.
+
+---
+
+## 2. Complexity Analysis
+
+### Time Complexity: $O(\log N)$
+*   **Peak Identification:** We perform a binary search over $N$ elements, requiring $O(\log N)$ comparisons.
+*   **Search Phase:** We perform at most two binary searches on sub-arrays of size $P$ (ascending) and $N-P$ (descending). Each binary search takes $O(\log N)$.
+*   **Total:** $O(\log N + \log N + \log N) = O(\log N)$.
+
+### Space Complexity: $O(K)$
+*   The `valueCache` stores unique lookups. In the worst case, every `get()` operation is unique.
+*   **Total:** $O(\log N)$ calls are made due to the three-stage binary search, thus the cache space is $O(\log N)$.
+
+---
+
+## 3. Component Deep Dive
+
+### `getValue(index, mountainArray)`
+*   **Purpose:** Encapsulates the API interaction with a memoization layer.
+*   **Critical Detail:** The problem specifies a limited number of `get()` calls. While simple binary search only touches $O(\log N)$ indices, the Peak search needs to compare triplets `(mid-1, mid, mid+1)`. Caching ensures that even if a branch visits a previously checked index, we remain within the problem's strict budget.
+
+### Peak Search Logic
+*   **Implementation:** The search window is restricted to `[1, length - 2]` as the definition of a mountain array mandates that the peak cannot be at the boundaries.
+*   **Conditions:**
+    *   `leftValue < midValue < rightValue`: Slope is positive; peak is to the right.
+    *   `leftValue > midValue > rightValue`: Slope is negative; peak is to the left.
+    *   Else: `mid` is the global maximum.
+
+### Binary Search (Ascending vs. Descending)
+*   **Generalization:** The implementation uses a boolean `ascending` flag. 
+    *   **Ascending:** If `midValue < target`, we move right (`left = mid + 1`).
+    *   **Descending:** If `midValue < target`, the target must be to the left, because values decrease as index increases (`right = mid - 1`).
+
+---
+
+## 4. Key Insights & Nuances
+
+### The "Smallest Index" Requirement
+The problem mandates returning the **smallest** index if the target appears multiple times. This is naturally handled by the search order:
+1. Search `[0, peakIndex]` first. If found, this is guaranteed to be the smallest index.
+2. Only search `[peakIndex + 1, N-1]` if the target was not found in the ascending half.
+
+### Performance Nuance: The Triple-Get
+In the peak identification phase, the code fetches `mid-1`, `mid`, and `mid+1` every iteration. While this is $3 \times \log N$ calls, it is safer than alternatives that might cause `IndexOutOfBounds` exceptions or complex boundary arithmetic. Given that $N$ is typically up to $10^4$ or $10^5$, $3 \log N$ is well within standard limits (usually ~100 calls allowed).
+
+### Subtle Edge Case: The "Sharp" Peak
+The binary search for the peak correctly handles arrays that might peak early or late. By enforcing `left = 1` and `right = length - 2`, we avoid unnecessary calls to `get()` on invalid indices (e.g., `get(-1)` or `get(length)`), which would otherwise lead to a runtime exception in the underlying API.
+
+### Potential Optimization
+The `valueCache` could be removed if the logic was purely iterative and carefully managed. However, using a `Map` is excellent for debugging and ensures that the API call limit is strictly respected even if the search logic is modified in the future. For memory-constrained environments, one could replace `HashMap` with a fixed-size `int[]` if the max $N$ is known, reducing the overhead of object allocation.
+
+---
