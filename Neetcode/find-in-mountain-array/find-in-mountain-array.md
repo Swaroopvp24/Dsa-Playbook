@@ -50,3 +50,62 @@ The problem likely limits `mountainArray.get()` calls (e.g., 100 calls). Because
 *   **Strict Monotonicity**: The problem implies a strictly increasing then strictly decreasing structure. If the array contained plateaus (e.g., `[1, 2, 2, 1]`), binary search would fail as the property of monotonicity would be violated, potentially leading to an incorrect peak identification.
 
 ---
+
+## standard_binary_search(cache).java
+*Style: detailed*
+
+# Engineering Deep-Dive: Mountain Array Search
+
+## Summary
+The problem requires finding a target value in a unimodal "Mountain Array" ($A[0] < A[1] < \dots < A[peak] > \dots > A[n-1]$). Since the array is monotonic on either side of the peak, the optimal approach is a **three-pass binary search strategy**:
+1.  **Peak Identification**: Use binary search to locate the index $i$ where $A[i-1] < A[i] > A[i+1]$.
+2.  **Ascending Search**: Perform standard binary search on $[0, peak]$.
+3.  **Descending Search**: Perform modified binary search on $[peak+1, n-1]$.
+
+The implementation employs a memoization layer (`valueCache`) to adhere to the strict `MountainArray.get()` call constraints, effectively treating the API as an $O(1)$ memory-accessible array.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(\log N)$
+*   **Peak Search**: Binary search over the range $[1, N-2]$ yields $O(\log N)$ calls.
+*   **Ascending/Descending Search**: Two independent binary searches over the sub-segments of $N$ yield $O(\log N)$ calls.
+*   Total operations are $3 \times \log N$, which simplifies to **$O(\log N)$**.
+
+### Space Complexity: $O(\log N)$
+*   While the algorithm is conceptually $O(1)$ in auxiliary space, the `HashMap` implementation introduces **$O(\log N)$** space complexity. Each unique index accessed during the three binary searches is stored.
+*   **Note on Constraints**: If the API call limit is extremely tight (e.g., $100$ calls), $O(\log N)$ is the theoretical minimum. The overhead of the `HashMap` is negligible given the scale of typical test cases.
+
+---
+
+## Component Deep Dive
+
+### 1. The Peak Search Mechanism
+The peak search logic distinguishes three states by sampling a window of three elements:
+*   **Increasing**: $A[i-1] < A[i] < A[i+1] \implies$ Peak is to the right.
+*   **Decreasing**: $A[i-1] > A[i] > A[i+1] \implies$ Peak is to the left.
+*   **Peak**: $A[i-1] < A[i] > A[i+1] \implies$ Current index is the peak.
+
+**Edge Case Handling**: The search range starts at `1` and ends at `arrayLength - 2` because a valid mountain array requires at least three elements and the peak cannot reside at the boundaries ($0$ or $N-1$).
+
+### 2. Memoization Strategy
+The `getValue` method acts as a proxy for the `MountainArray` interface. 
+*   **Performance Impact**: `HashMap` lookups provide $O(1)$ average time complexity.
+*   **Benefit**: In a standard binary search, we frequently access the `middle` index multiple times for comparison logic. Memoization ensures that the total number of calls to the external `get()` API is strictly capped by the number of unique indices visited in the search tree.
+
+### 3. Modified Binary Search
+The `binarySearch` function handles both sides using a boolean `ascending` flag. This encapsulates the logic into a reusable block:
+*   **Ascending**: Standard behavior. If `midValue < target`, move right.
+*   **Descending**: Inverted behavior. If `midValue < target`, the target must be on the left (because values decrease as the index increases).
+
+---
+
+## Key Insights
+
+*   **The "Smallest Index" Requirement**: The problem asks for the smallest index of the target. By searching the **ascending side first**, we guarantee that if the target exists in both the left and right slopes (impossible in a strictly unimodal mountain array) or if we find it in the left partition, we return the minimal index immediately.
+*   **The `middle` Calculation**: `int middle = left + (right - left) / 2;` is used instead of `(left + right) / 2` to prevent **integer overflow** in languages with fixed-width integers, an essential best practice for high-reliability systems.
+*   **Optimization Nuance**: The `HashMap` is slightly overkill for memory efficiency. If strict memory usage were required, a fixed-size `int[]` array could be used, but since we don't know the exact number of calls per input, the `HashMap` is more robust against dynamic constraints. 
+*   **Subtle Bug Warning**: Ensure the range for the descending search is `peakIndex + 1` to `arrayLength - 1`. Off-by-one errors here are common when splitting the mountain; the peak index itself is already accounted for in the ascending search.
+
+---
