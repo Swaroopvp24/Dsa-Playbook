@@ -228,3 +228,50 @@ public boolean isPowerOfTwo(int n) {
 
 ---
 
+## bit_manipulation_solution.java
+*Style: detailed*
+
+# Technical Deep-Dive: Bitwise Power of Two Detection
+
+## Summary
+The solution employs a **Bitwise Manipulation** strategy to verify if a positive integer $n$ is a power of two. The algorithm leverages the unique property that in binary representation, a power of two is represented as a single `1` bit followed by $k$ zeros (e.g., $2^3 = 8_{10} = 1000_2$). By utilizing the algebraic property of two's complement arithmetic, specifically the `n & (n - 1)` operation, we can effectively "strip" the lowest set bit. If the result is zero, the integer contained exactly one set bit, confirming it as a power of two.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(1)$
+*   **Reasoning:** The operation consists of a single integer subtraction, a single bitwise AND operation, and a comparison. Regardless of the magnitude of $n$ (within the 32-bit signed integer range), these operations are executed by the CPU in a fixed number of clock cycles. There are no loops or recursive calls dependent on the value of $n$.
+
+### Space Complexity: $O(1)$
+*   **Reasoning:** The algorithm requires no auxiliary data structures or recursion stacks. It operates entirely within a single primitive integer register, consuming constant memory overhead.
+
+---
+
+## Component Deep Dive
+
+### 1. The Guard Clause (`n <= 0`)
+*   **Logic:** Powers of two are strictly defined as $2^x$ where $x \ge 0$. The smallest power of two is $2^0 = 1$. 
+*   **Edge Case:** $n=0$ is not a power of two. Negative numbers are represented using Two's Complement in Java; they have the sign bit set (the most significant bit), which would interfere with the `n & (n-1)` logic. Immediate rejection of $n \le 0$ ensures safety.
+
+### 2. The Bitwise Kernel (`n & (n - 1)`)
+This operation is a standard idiom in bit manipulation. Let’s break down the binary transformation:
+*   **Binary Property:** If $n$ is a power of two, $n = 2^k$. In binary, this is `1` followed by $k$ zeros.
+*   **Subtraction Effect:** $n - 1$ flips the lowest set bit (`1`) to `0` and flips all trailing zeros to `1`.
+    *   Example: $8 (1000_2) - 1 = 7 (0111_2)$.
+*   **The Intersection:** The `&` operator compares bits. Since $n$ and $n-1$ share no set bits when $n$ is a power of two, the result is `0000_2`.
+*   **Verification:** If $n$ is *not* a power of two, it must have at least two set bits. The `n-1` operation only affects the bits up to and including the lowest set bit, leaving higher-order set bits untouched. Consequently, `n & (n-1)` will preserve those higher-order bits, resulting in a non-zero value.
+
+---
+
+## Key Insights
+
+### Performance Optimization Nuances
+*   **Branch Prediction:** While this is a branchless logical expression, the `if(n <= 0)` check introduces a branch. In high-frequency trading or embedded systems, if input distributions are known to be positive, this check could theoretically be hoisted or handled via architectural constraints to maximize pipeline efficiency.
+*   **CPU Instructions:** Modern x86-64 and ARM architectures have native support for these instructions (`AND` and `SUB`). This approach is significantly faster than counting set bits via `Integer.bitCount(n)` or logarithmic approaches (`Math.log(n) / Math.log(2)`), which involve floating-point arithmetic and higher latency.
+
+### Subtle Considerations
+*   **Integer Overflow:** The logic holds for all positive signed 32-bit integers. However, beware of `Integer.MIN_VALUE` ($-2^{31}$). In Two's Complement, this is `1000...000`. The guard clause `n <= 0` correctly handles this, but if the constraints were changed to allow negatives (e.g., for bitwise hacks), one must account for the sign bit behavior.
+*   **Hardware Independence:** This approach is purely arithmetic and relies on the Two's Complement representation, which is mandated by the Java Language Specification (JLS). It is therefore portable across all JVM implementations.
+
+---
