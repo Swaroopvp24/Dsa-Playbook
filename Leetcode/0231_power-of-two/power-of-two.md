@@ -235,3 +235,54 @@ public boolean isPowerOfTwo(int n) {
 *   **Negative Inputs**: The initial `n > 0` check is critical. If the input were allowed to be processed without this check, negative numbers could potentially enter an infinite loop (e.g., `-2 / 2 = -1`, `-1 / 2 = 0`), which would return `false` correctly but at the cost of unnecessary CPU cycles or incorrect logic flow.
 
 ---
+
+## bit_manipulation_solution.java
+*Style: detailed*
+
+# Deep-Dive Reference: Bitwise Power of Two Verification
+
+## Summary
+The solution leverages the properties of **Two's Complement representation** to identify powers of two in $O(1)$ time. A number $n$ is a power of two if and only if its binary representation contains exactly one `1` bit. By performing a bitwise `AND` between $n$ and $n-1$, we effectively strip the lowest set bit. If the result is $0$, it mathematically proves that $n$ possessed exactly one set bit, satisfying the condition $n = 2^k$ for some integer $k \ge 0$.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(1)$
+The algorithm executes a single conditional check and a single bitwise `AND` operation. These are primitive CPU instructions that take constant time regardless of the magnitude of $n$ (within the constraints of a 32-bit signed integer).
+
+### Space Complexity: $O(1)$
+The implementation performs the check in-place using only the registers of the CPU, requiring no auxiliary data structures or recursion.
+
+---
+
+## Component Deep Dive
+
+### 1. The Guard Clause (`n <= 0`)
+*   **Rationale:** Bitwise logic relies on the representation of positive integers. Negative numbers (represented in Two's Complement) and zero do not satisfy the mathematical definition of $2^k$. Specifically, zero has no set bits, and negative numbers always have the Most Significant Bit (MSB) set (the sign bit), which would interfere with the `(n & (n-1))` check.
+*   **Edge Case:** $n = -2^{31}$ (Integer.MIN_VALUE). The bitwise check alone is insufficient, making the guard clause mandatory.
+
+### 2. The Bitwise Kernel: `(n & (n - 1))`
+This is the core logic. Let $n$ be represented as $x10...0$, where $1$ is the lowest set bit and $x$ represents any bits to the left.
+*   **Operation $(n-1)$:** This flips the rightmost `1` to `0` and flips all trailing `0`s to `1`s.
+*   **Resulting Mask:**
+    *   If $n$ is a power of two ($100...0$): $n-1$ becomes $011...1$. The `&` operation results in `000...0`.
+    *   If $n$ is not a power of two: There exists at least one other `1` bit to the left of the lowest set bit. This bit remains unchanged during the $(n-1)$ operation and will persist through the `&` operation, resulting in a non-zero value.
+
+---
+
+## Key Insights
+
+### The "Two's Complement" Nuance
+It is critical to note that this solution assumes a 32-bit signed integer environment. While Java's `int` is always signed, the `&` operator treats the operands as a bit-pattern rather than a numerical value. Because we explicitly filter $n \le 0$, we bypass potential ambiguities with the sign bit, ensuring the result is strictly mathematical in the domain of positive powers of two.
+
+### Performance Nuance: Branch Prediction
+Because the logic is branched (`if (n <= 0)`), modern pipelined processors will attempt to predict the outcome. In scenarios where the input is heavily skewed toward positive integers, the branch predictor will achieve near 100% accuracy, maintaining the efficiency of the $O(1)$ operation. 
+
+### Why not `Integer.bitCount(n) == 1`?
+While `Integer.bitCount(n) == 1` is functionally correct and highly readable, it is historically implemented using a population count instruction (e.g., `POPCNT` on x86 architectures). While modern JVMs optimize this well, the bitwise `(n & (n-1))` trick is mathematically elegant and often faster in constrained environments where hardware-level population count might be emulated in software rather than exposed as a single-cycle instruction. 
+
+### Potential Pitfall: Overflow
+While the bitwise trick is robust, developers should be aware that if $n$ were a `long` or a larger type, the logic remains identical. However, if one were to try to use an addition-based approach (e.g., `n + n`), one would encounter integer overflow. The bitwise approach provided here is immune to overflow because it effectively *reduces* the magnitude of the number or maintains the specific bit structure without carrying bits to the left.
+
+---
