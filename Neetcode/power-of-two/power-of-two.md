@@ -179,3 +179,52 @@ public final class PowerOfTwo {
 Use the refactored version for any real‑world code; keep the recursive version only as pedagogical material.
 
 ---
+
+## iteration_solution.java
+*Style: detailed*
+
+# Technical Reference: Power of Two Identification
+
+## Summary
+The provided implementation validates if an integer `n` is a power of two ($2^k$ for $k \ge 0$) using an **iterative division-based reduction**. The algorithm relies on the mathematical property that a power of two is divisible by 2 repeatedly until reaching 1, without encountering any odd remainders during the process.
+
+## Complexity Analysis
+
+### Time Complexity: $O(\log n)$
+*   **Derivation**: The algorithm performs a divide-by-two operation (`n /= 2`) in each iteration. The number of times one can divide a number $n$ by 2 before it reaches 1 is precisely $\log_2(n)$.
+*   **Constraint Impact**: For a 32-bit signed integer, the maximum value is $2^{31}-1$. Thus, the loop will execute a maximum of 31 times, making this effectively $O(1)$ in a practical sense, though theoretically logarithmic relative to the input magnitude.
+
+### Space Complexity: $O(1)$
+*   **Derivation**: The solution operates purely on primitive integers and utilizes no auxiliary data structures or recursion. The memory footprint remains constant regardless of the input value.
+
+## Component Deep Dive
+
+### 1. Loop Condition (`n > 0`)
+*   **Purpose**: Acts as an initial filter. Negative numbers and zero are mathematically excluded from the powers of two ($2^k, k \in \mathbb{Z}_{\ge 0}$).
+*   **Edge Case**: If `n = 0`, the loop terminates immediately and returns `false`. This is correct, as $2^k$ can never equal 0.
+
+### 2. Termination Logic (`if (n == 1)`)
+*   **Purpose**: Represents the base case. If we have successfully divided the original input by 2 repeatedly without finding an odd remainder, we reach $2^0 = 1$, confirming the original input was a power of two.
+
+### 3. Parity Check (`if (n % 2 != 0)`)
+*   **Purpose**: This is the early-exit condition. If $n$ is currently odd and greater than 1, it implies the original number possessed a prime factor other than 2. Therefore, it cannot be a power of two.
+
+## Key Insights & Optimization Nuances
+
+### The Bitwise Alternative
+While the iterative approach is intuitive, it is inefficient compared to the bitwise trick often used in high-performance systems. A binary power of two in two's complement representation has exactly one bit set (e.g., $8_{10} = 1000_2$, $7_{10} = 0111_2$).
+
+By applying the bitwise `AND` operator:
+```java
+public boolean isPowerOfTwo(int n) {
+    return n > 0 && (n & (n - 1)) == 0;
+}
+```
+*   **Why it works**: Subtracting 1 from a power of two flips the set bit to 0 and all trailing bits to 1. Performing an `n & (n - 1)` forces all bits to 0. This reduces the complexity from $O(\log n)$ to **$O(1)$** clock cycles.
+
+### Subtle Bugs & Constraints
+*   **Integer Overflow**: The provided iterative solution is safe from overflow because it only performs division. However, if one were to attempt to solve this by multiplying 2 iteratively (e.g., `for (int i = 1; i <= n; i *= 2)`), one would risk an infinite loop or arithmetic overflow when $n$ approaches `Integer.MAX_VALUE`.
+*   **Negative Inputs**: The initial `n > 0` check is critical. If the input were allowed to be processed without this check, negative numbers could potentially enter an infinite loop (e.g., `-2 / 2 = -1`, `-1 / 2 = 0`), which would return `false` correctly but at the cost of unnecessary CPU cycles or incorrect logic flow.
+
+---
+
