@@ -68,3 +68,57 @@ While this implementation is highly readable and logically robust, it is **sub-o
 *   **Memory Overhead:** In a high-throughput system, if $N$ is very large (e.g., $10^6$ nodes), the overhead of the `ArrayDeque` (holding $10^6$ references) may trigger GC pressure. If the platform has tight memory limits, consider the in-place pointer reversal technique.
 
 ---
+
+## linkedlist_optimal_solution.java
+*Style: detailed*
+
+# Engineering Design Document: In-Place Linked List Reordering
+
+## Summary
+The `reorderList` solution implements an $O(N)$ space-optimized in-place algorithm to transform a singly linked list $L: 0 \to 1 \to \dots \to n-1 \to n$ into $L: 0 \to n \to 1 \to n-1 \to 2 \to n-2 \to \dots$.
+
+The strategy leverages a three-phase "divide-and-conquer" approach:
+1. **Topology Analysis:** Locating the midpoint via the Tortoise and Hare (Floyd’s cycle-finding variant) algorithm.
+2. **Structural Reversal:** In-place iterative pointer manipulation of the second sub-list.
+3. **Interleaving:** A synchronized merge phase that stitches the two sub-lists by reassigning `next` pointers.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+* **Midpoint Search:** Traversing the list with $O(N/2)$ steps.
+* **Reversal:** Reversing the second half involves $O(N/2)$ operations.
+* **Merge:** Traversing the interleaved result takes $O(N/2)$ operations.
+Total time complexity is $T(N) = O(N/2 + N/2 + N/2) \approx O(N)$.
+
+### Space Complexity: $O(1)$
+The implementation is strictly in-place. It utilizes a constant number of `ListNode` references (pointers) regardless of input size $N$. No recursion stack or auxiliary data structures (like arrays or deques) are used, making it highly efficient for memory-constrained environments.
+
+---
+
+## Component Deep Dive
+
+### 1. The Tortoise and Hare Midpoint Logic
+By setting `fast = head` and `slow = head`, the `fast` pointer hits the tail at the same time the `slow` pointer reaches the midpoint. 
+* **Edge Case:** When the list length is odd, `slow` lands on the exact middle element. By setting `slow.next = null`, we effectively truncate the first half and detach the second half for reversal, ensuring the algorithm cleanly handles both odd and even parity lengths.
+
+### 2. Iterative Pointer Reversal
+The reversal phase employs a standard three-pointer shift:
+* `previous` (trailing pointer), `current` (the node being processed), and `nextNode` (buffer).
+* This maintains structural integrity without auxiliary list instantiation. The termination condition `current != null` ensures the entire second segment is flipped, making the tail of the original list the new head of the second segment.
+
+### 3. Interleaving Merge
+This phase is the most critical for memory safety. By buffering `firstHalfNext` and `secondHalfNext` *before* rewriting the `next` pointers of `firstHalfCurrent` and `secondHalfCurrent`, the algorithm prevents "dangling node syndrome," where references to the remainder of the list are lost.
+
+---
+
+## Key Insights
+
+* **The "Null" Termination Constraint:** A common bug in linked list manipulation is creating a cycle. Specifically, in the merge step, if the second half is shorter than the first (odd length), the `secondHalfCurrent` loop naturally terminates, leaving the tail of the first half correctly pointing to the final node.
+* **Pointer Buffering:** Failure to store `firstHalfNext` and `secondHalfNext` is the most common failure point. Always cache downstream references before overwriting pointer `A.next = B`.
+* **Stability:** This algorithm is stable regarding node identity. It does not create new objects; it purely reassigns existing references. This is crucial for garbage collection pressure, as this function can be called on massive lists without increasing heap occupancy.
+* **Refinement Opportunities:**
+    * The implementation assumes the list is at least 1 node long. For production-grade code, an explicit `if (head == null || head.next == null) return;` guard clause should be added to handle empty or single-node inputs efficiently.
+
+---
