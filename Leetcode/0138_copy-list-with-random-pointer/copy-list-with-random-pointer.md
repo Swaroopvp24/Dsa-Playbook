@@ -52,3 +52,64 @@ While this implementation is $O(N)$ in space, this problem can be solved in **$O
 *   **Garbage Collection:** Note that this solution holds a reference to every node in the original list within the `HashMap` until the function exits. In extremely large lists, this ensures the original nodes remain reachable in the heap, effectively doubling the memory pressure during execution.
 
 ---
+
+## linkedlist_optimal_solution.java
+*Style: detailed*
+
+# Deep Dive: O(1) Space Complexity Deep Copy of Linked List with Random Pointers
+
+## Summary
+The problem requires duplicating a linked list where each node contains an additional `random` pointer that can point to any node in the list or `null`. The standard approach uses a hash map to maintain a mapping from original nodes to their copies, resulting in $O(N)$ space. 
+
+This implementation utilizes an **Interweaving/Pointer Manipulation** technique. By interleaving copied nodes directly into the original list structure, we eliminate the need for auxiliary data structures (hash maps) to track node identity. This reduces the space complexity to $O(1)$ (excluding the output list) by temporarily leveraging the `next` pointers to establish the mapping.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Step 1 (Interleaving):** We traverse the list once, creating $N$ nodes. $O(N)$.
+*   **Step 2 (Random Mapping):** We traverse the list once to wire the `random` pointers. $O(N)$.
+*   **Step 3 (Separation):** We traverse the list once to restore original `next` pointers and extract the copy. $O(N)$.
+*   Total operations scale linearly with the number of nodes $N$, resulting in $O(3N) \approx O(N)$.
+
+### Space Complexity: $O(1)$
+*   The algorithm operates **in-place** regarding auxiliary data structures. 
+*   We use only a constant amount of pointer storage (`current`, `copiedNode`, `copiedHead`).
+*   *Note:* The space used by the *new* list is required by the problem statement and is not considered auxiliary space in this context.
+
+---
+
+## Component Deep Dive
+
+### 1. Interleaving (The "Shadow" List)
+The core logic resides in inserting each `copiedNode` immediately after its corresponding `originalNode`. 
+*   **Mechanism:** `A -> B` becomes `A -> A' -> B -> B'`.
+*   **Effect:** This creates a deterministic, fixed-offset relationship. For any `originalNode`, its `copy` is always `originalNode.next`.
+
+### 2. Random Pointer Resolution
+Once the shadow list is established, resolving `random` pointers becomes a local operation:
+*   Given `originalNode.random = Target`, the copy's random pointer must be the copy of `Target`.
+*   Since `Target` is an original node, its copy is simply `Target.next`.
+*   **Logic:** `current.next.random = current.random.next`.
+*   **Edge Case:** The implementation correctly checks `current.random != null` to avoid `NullPointerException` when a node's random pointer points to `null`.
+
+### 3. Separation (Pointer Restoration)
+This step is critical for data integrity. We are "unzipping" the two lists:
+*   `current.next = current.next.next` repairs the original list.
+*   `copiedNode.next = copiedNode.next.next` links the copies together.
+*   **Nuance:** The final `current` in the loop relies on the restoration of `current.next` to reach the next valid original node. Failure to restore the list pointers exactly would leave the input list in a corrupted state, which is unacceptable for production-grade library code.
+
+---
+
+## Key Insights
+
+### Performance Optimization: The "Pointer Stitching" Pattern
+This is a classic example of **in-place mutation as a space optimization**. While using a `HashMap<Node, Node>` is more intuitive and arguably safer (as it avoids mutating the input), it incurs a heap overhead for $N$ map entries. In highly constrained environments (embedded systems, large-scale processing), this pattern is superior.
+
+### Subtle Bugs & Gotchas
+1.  **Tail Node Separation:** In Step 3, the final node's `next` pointer in the copied list must be set to `null` to avoid pointing back into the original list structure. The provided code handles this: if `copiedNode.next` is null, the `if` block is skipped, leaving the copy's `next` as the value it took from the original list's trailing null.
+2.  **Input Integrity:** This solution is **destructive**. It temporarily modifies the `next` pointers of the input list. If the function were to fail or throw an exception midway, the caller's input list would be left in a corrupted, interleaved state. In a production environment, you would wrap this in a `try-finally` block to ensure that if an error occurs, the original list structure is restored or the operation is aborted.
+3.  **Thread Safety:** This algorithm is inherently **not thread-safe**. Since it relies on mutating the nodes of the original list to store auxiliary state, concurrent access to the linked list while `copyRandomList` is running will result in race conditions and memory corruption. If the input list must remain immutable to other threads, a `HashMap` approach is mandatory despite the $O(N)$ space cost.
+
+---
