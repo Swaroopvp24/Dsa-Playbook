@@ -190,3 +190,63 @@ The algorithm does *not* allocate any new `ListNode` objects. The only heap allo
  * Reverses the
 
 ---
+
+## linkedlist_optimal_solution.java
+*Style: detailed*
+
+# Engineering Deep-Dive: In-Place Linked List Sub-segment Reversal
+
+## Summary
+The `reverseBetween` implementation employs a **pointer manipulation strategy** to reverse a sub-segment of a singly linked list in-place. Instead of traditional recursive approaches or copying values, the algorithm performs a series of pointer shuffles to "bubble up" nodes to the start of the defined range. 
+
+By utilizing a **dummy head node**, the implementation simplifies the edge case where the range reversal includes the head of the list ($left = 1$), avoiding redundant conditional branching.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Traversal:** The algorithm traverses the list up to the `right` index once.
+*   **Pointer Swaps:** The reversal loop executes exactly $(right - left)$ times. 
+*   Since $right \leq N$, the total number of operations is bounded by $O(N)$. 
+
+### Space Complexity: $O(1)$
+*   The approach is strictly iterative and in-place. 
+*   It utilizes a fixed number of auxiliary pointer variables (`dummy`, `beforeReversal`, `start`, `nodeToMove`), regardless of the input size $N$. 
+*   No additional data structures or recursive call stacks are utilized.
+
+---
+
+## Component Deep Dive
+
+### 1. The Dummy Node Strategy
+The `dummy` node is a sentinel that serves as the entry point to the list. By pointing `dummy.next` to the original `head`, we ensure that `beforeReversal` always has a valid predecessor, even if the range reversal starts at the very first node. Without this, the head update logic would require an `if-else` condition.
+
+### 2. The "Bubble" Reversal Logic
+The core mechanism is a loop that transforms the sub-list:
+1.  **Isolation:** `start.next = nodeToMove.next;` disconnects `nodeToMove` from the current sequence.
+2.  **Relocation:** `nodeToMove.next = beforeReversal.next;` points the detached node back to the current sub-list start.
+3.  **Anchoring:** `beforeReversal.next = nodeToMove;` grafts the node into its new position behind `beforeReversal`.
+
+This essentially treats the `start` node as a pivot, shifting nodes from `start.next` to the position directly following `beforeReversal` repeatedly until the range is reversed.
+
+### 3. Edge Case Handling
+*   **$left = right$:** The algorithm returns early, as a range of length 1 requires no operations.
+*   **Range = List Length:** Handled correctly by the dummy node, effectively reversing the entire list.
+*   **Invalid Range:** While not explicitly guarded by assertions, the logic assumes $1 \leq left \leq right \leq N$. If $right$ exceeds the list length, `nodeToMove` will hit a `NullPointerException` when accessing `.next`.
+
+---
+
+## Key Insights & Nuances
+
+### Pointer Integrity
+The critical subtlety in this algorithm is the order of operations. One must ensure that `start.next` is updated to "bridge the gap" before modifying `nodeToMove.next`. If done in reverse order, the list would become disconnected, leading to memory leaks or broken traversal paths.
+
+### Performance Nuance: Variable Reassignment
+The reassignment `nodeToMove = start.next;` at the end of the loop is the key to maintaining the correct order. `start` remains fixed as the original first node of the sub-segment, which gradually drifts toward the end of the sub-segment as nodes are moved in front of it.
+
+### Potential Vulnerabilities
+*   **Dangling Pointers:** If this were implemented in a language with manual memory management (like C++), one would need to ensure that the node effectively "displaced" during the `start.next` reassignment is properly managed if not already linked elsewhere. In Java, the Garbage Collector handles this, but the logic remains fragile regarding pointer order.
+*   **Range Validation:** As noted, the function assumes valid input. A production-ready version should validate that `right` does not exceed list bounds to prevent runtime `NullPointerExceptions` during the `nodeToMove.next` lookup.
+
+---
