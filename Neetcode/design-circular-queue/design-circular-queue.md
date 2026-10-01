@@ -182,3 +182,48 @@ Choosing linked‑list is acceptable for interview‑style correctness, but **pr
 > The `MyCircularQueue` class implements a bounded FIFO queue with O(1) en‑ and de‑queue operations via a singly‑linked list, using a `size` counter to enforce capacity rather than true circular linking; it is memory‑intensive, non‑thread‑safe, and best suited for correctness‑focused scenarios rather than high‑performance production use.  
 
 ---
+
+## array+twopointer_solution.java
+*Style: detailed*
+
+# Technical Reference: Array-Based Circular Queue
+
+## Summary
+The `MyCircularQueue` implementation utilizes a fixed-size contiguous array to simulate a circular buffer. This approach addresses the "dead space" limitation of standard linear queues implemented with arrays, where dequeued elements leave unreachable indices at the head of the array. By employing modular arithmetic (`% capacity`), the implementation allows the logical "head" and "tail" of the queue to wrap around the physical boundaries of the array, enabling $O(1)$ space reclamation.
+
+## Complexity Analysis
+
+| Operation | Time Complexity | Space Complexity |
+| :--- | :--- | :--- |
+| `enQueue` | $O(1)$ | $O(1)$ |
+| `deQueue` | $O(1)$ | $O(1)$ |
+| `Front`/`Rear` | $O(1)$ | $O(1)$ |
+| `isEmpty`/`isFull`| $O(1)$ | $O(1)$ |
+
+*   **Time Complexity:** All operations perform a constant number of arithmetic or logical comparisons, independent of the capacity $k$. The modulo operator acts as the bridge for circular traversal.
+*   **Space Complexity:** The space complexity is $O(k)$ for the underlying array, where $k$ is the capacity. No auxiliary data structures are used, maintaining constant auxiliary space beyond the queue storage.
+
+## Component Deep Dive
+
+### 1. The Pointers (`front` and `rear`)
+*   **`front`**: Points to the index of the oldest element in the queue.
+*   **`rear`**: Points to the index where the *next* element will be inserted.
+*   **Design Rationale**: This "open-ended" rear pointer design simplifies the `enQueue` logic but introduces a non-trivial calculation for the `Rear()` method.
+
+### 2. Modular Arithmetic Strategy
+The use of `(index + 1) % capacity` is the mechanism that facilitates the "circular" behavior. 
+*   **`enQueue`**: Increments `rear` after insertion. If `rear` exceeds the maximum index, it wraps to `0`.
+*   **`deQueue`**: Increments `front` to effectively discard the current head.
+*   **`Rear()`**: Since `rear` points to the *next* insertion spot, the actual last element is at `(rear - 1)`. We add `capacity` before the modulo operation—`(rear - 1 + capacity) % capacity`—to gracefully handle the underflow case where `rear` is `0`.
+
+### 3. State Management (`size`)
+Rather than relying on pointer comparisons (like `front == rear`), which are notoriously difficult to distinguish between "full" and "empty" states without leaving one slot vacant, this implementation uses an explicit `size` counter. This makes the logic for `isFull()` and `isEmpty()` explicit and readable.
+
+## Key Insights
+
+*   **Underflow Mitigation:** In `Rear()`, the expression `(rear - 1 + capacity) % capacity` is a standard idiom for circular index decrementation. Without the `+ capacity`, `(0 - 1) % capacity` would result in `-1`, which is an invalid array index in Java.
+*   **The "Gap" Avoidance:** Many circular queue implementations use an extra null slot to differentiate full vs. empty states (where `(rear + 1) % capacity == front` means full). By explicitly tracking `size`, we consume the full $k$ capacity of the array without needing to waste a slot.
+*   **Potential Bottlenecks:** While $O(1)$, the modulo operator can be computationally expensive on older hardware compared to bitwise operators. If `capacity` were guaranteed to be a power of two (e.g., $2^n$), the modulo operator could be replaced with a bitwise AND: `(index + 1) & (capacity - 1)`. Given the current signature, the generic modulo is necessary for flexibility.
+*   **Thread Safety Note:** This class is **not thread-safe**. Concurrent calls to `enQueue` and `deQueue` will result in race conditions on the `size`, `front`, and `rear` variables. If utilized in a multi-threaded environment, access to these methods must be synchronized or wrapped in a `ReentrantLock`.
+
+---
