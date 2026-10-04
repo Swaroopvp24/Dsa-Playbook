@@ -51,3 +51,53 @@ The dual-map approach is necessary because a simple single-map approach fails wh
 The current implementation is **thread-safe for local execution** as the maps are scoped to the method stack. However, if these maps were converted to static class members, the implementation would require `ConcurrentHashMap` or external synchronization. Given the current design, this is highly efficient for concurrent request processing.
 
 ---
+
+## constant_space_optimized.java
+*Style: detailed*
+
+# Engineering Deep-Dive: Isomorphic Strings Implementation
+
+## Summary
+The solution implements a **Bijective Mapping** strategy to determine if two strings are isomorphic. Two strings are isomorphic if the characters in string `s` can be replaced to get string `t`, maintaining a strict one-to-one correspondence where no two characters in `s` map to the same character in `t`, and vice versa. 
+
+The algorithm utilizes a dual-array lookup table (acting as a fixed-size hash map) to enforce this bijection in a single pass. By maintaining mappings in both directions (`s` to `t` and `t` to `s`), we satisfy the requirement of injective mapping from both domains.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Analysis:** We perform a single linear traversal of the strings. Given $N$ is the length of the string, each character access, comparison, and array write operation occurs in $O(1)$ constant time.
+*   **Note:** The constant factor is minimal because array lookups are cache-friendly compared to `HashMap<Character, Character>` overhead.
+
+### Space Complexity: $O(K)$
+*   **Analysis:** The space complexity is $O(K)$, where $K$ is the character set size (in this case, $K=256$ for Extended ASCII). 
+*   **Justification:** Since the array size is fixed at 256 regardless of the input string length $N$, the space complexity is technically $O(1)$ in terms of asymptotic growth relative to $N$. However, it scales with the alphabet size.
+
+---
+
+## Component Deep Dive
+
+### 1. The Dual-Array Mapping Strategy
+The use of two separate integer arrays (`sourceToTarget` and `targetToSource`) is a classic technique to enforce a **Bijective Function**. 
+*   **Conflict Detection:** 
+    *   If `sourceToTarget[sourceChar]` already holds a value, we must verify that the existing value matches the current `targetChar`. Any discrepancy implies a violation of the "one-to-one" rule.
+    *   Symmetrical checks in `targetToSource` prevent "many-to-one" mappings (e.g., two different source characters mapping to the same target).
+
+### 2. The Zero-Initialization Nuance
+*   **Implicit Handling:** The arrays are initialized to `0`. In Java, this is safe because the character set effectively uses values 1–255. 
+*   **The Trap:** If the input alphabet included the null character `\0` (ASCII 0), this logic would fail as `0` would be indistinguishable from "no mapping yet." In an production environment with wider character support (e.g., Unicode), one should use an `int` array initialized to `-1` or a `BitSet` to track visited indices.
+
+### 3. Edge Case Handling
+*   **String Length:** The logic implicitly assumes `s.length() == t.length()`. If strings were of unequal lengths, the loop would throw an `ArrayIndexOutOfBoundsException` or `StringIndexOutOfBoundsException`. (In the context of the problem constraints, it is assumed they are equal).
+*   **Empty Strings:** If both strings are empty, the loop is skipped, returning `true`. This is mathematically consistent (a null function is a valid bijection).
+
+---
+
+## Key Insights
+
+*   **Performance Optimization:** Using `int[]` instead of `HashMap<Character, Character>` significantly improves performance by avoiding **auto-boxing** (primitive `char` to `Character` object) and **hash collision overhead**. Array access by index is a direct memory address calculation, resulting in significantly higher cache locality.
+*   **Subtle Bug Warning:** This implementation assumes the standard ASCII character set (0-255). If the input were to contain full Unicode (e.g., emojis or extended Asian scripts), the `new int[256]` would trigger an `ArrayIndexOutOfBoundsException`. To harden this for production, one would either replace the arrays with `Map<Character, Character>` or use a larger primitive array (`new int[65536]` for Basic Multilingual Plane).
+*   **Memory Efficiency:** By allocating the 256-integer array on the stack (implicitly) or heap, we utilize exactly $256 \times 4 \times 2 = 2048$ bytes of memory. This constant memory footprint is optimal for high-throughput systems where GC pressure must be minimized.
+
+---
