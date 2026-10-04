@@ -57,3 +57,56 @@ A common pitfall in isomorphic implementation is updating only one map. Because 
 This structure ensures the injective and surjective requirements of a bijection are satisfied.
 
 ---
+
+## constant_space_optimized.java
+*Style: detailed*
+
+# Engineering Deep-Dive: Isomorphic Strings Implementation
+
+## Summary
+The solution determines if two strings $S$ and $T$ are isomorphic by enforcing a **bijective (one-to-one) mapping** between characters. To satisfy the isomorphic condition, every character in $S$ must map to exactly one character in $T$, and vice versa (injective property).
+
+The implementation utilizes a **Fixed-Array Direct Addressing Table (DAT)** approach instead of hash-based structures. By leveraging the constrained character set (ASCII 256), the algorithm avoids the overhead of object hashing and collision resolution, achieving optimal constant-time lookups.
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: $O(N)$
+*   **Analysis:** We perform a single linear pass over the input strings of length $N$. Inside the loop, all operations (array indexing, comparison, and assignment) are $O(1)$.
+*   **Constraint Note:** Given that the input is limited to the ASCII character set, the space usage remains constant regardless of $N$, but the execution time scales linearly with string length.
+
+### Space Complexity: $O(1)$ (Technically $O(\Sigma)$)
+*   **Analysis:** The space complexity is defined by the size of the character set ($\Sigma = 256$). Since the array sizes are constant (256 integers each), the memory footprint does not grow with the size of the input string $N$.
+*   **Constants:** The implementation uses $2 \times 256 \times 4$ bytes $\approx 2$ KB of stack/heap memory, which is negligible even in high-throughput environments.
+
+---
+
+## Component Deep Dive
+
+### 1. The Dual-Mapping Technique
+The core of the logic is the maintenance of two arrays:
+*   `sourceToTarget[256]`: Tracks $S[i] \to T[i]$.
+*   `targetToSource[256]`: Tracks $T[i] \to S[i]$.
+
+A single mapping is insufficient because it only validates $S \to T$. Without the second mapping, two distinct characters in $S$ could map to the same character in $T$ (e.g., "ab" -> "aa"). The dual mapping ensures a true bijection.
+
+### 2. Zero-Value Ambiguity
+*   **Observation:** The code uses `0` as the "uninitialized" sentinel value.
+*   **Risk:** If the inputs included the null character (`'\0'`), the current logic would treat a mapping to `'\0'` as an uninitialized state.
+*   **Refinement:** In production scenarios involving extended character sets, it is safer to initialize arrays to `-1` or use a `boolean[]` array to track whether an index has been visited, decoupling the initialization state from the character value itself.
+
+---
+
+## Key Insights
+
+### Performance Optimization Nuances
+*   **Cache Locality:** Using primitive `int[]` arrays is significantly faster than using `HashMap<Character, Character>`. The arrays fit into L1 cache, and the direct indexing bypasses the `Integer` autoboxing and `hashCode()` calculation overheads associated with collection objects.
+*   **Branch Prediction:** The checks (`!= 0`) are highly predictable in strings with repeat patterns, allowing the CPU to pipeline the validation logic efficiently.
+
+### Subtle Bugs & Edge Cases
+*   **String Length Mismatch:** The current implementation assumes `s.length() == t.length()`. If inputs are not pre-validated, the code will throw an `ArrayIndexOutOfBoundsException` or `StringIndexOutOfBoundsException` when `t.charAt(i)` is called on a shorter string.
+*   **Character Set Expansion:** If the problem requirements were upgraded to support Unicode (e.g., UTF-16), a `256` size array would trigger an overflow. In such a scenario, migrating to a `HashMap<Integer, Integer>` or a two-tiered sparse array would be necessary.
+*   **Sentinel Value Collision:** The decision to use `0` as a sentinel works perfectly for standard ASCII (where `0` is `null`), but it is a "lucky" implementation detail. Relying on sentinel values within data range is a common source of logic errors; a separate `boolean[] visited` array is the robust professional alternative.
+
+---
