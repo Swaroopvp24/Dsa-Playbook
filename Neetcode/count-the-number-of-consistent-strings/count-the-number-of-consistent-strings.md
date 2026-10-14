@@ -154,3 +154,59 @@ class Solution {
 *End of deep‑dive.*
 
 ---
+
+## attempt_2.java
+*Style: detailed*
+
+# Technical Deep-Dive: Consistent Strings Validator
+
+## Summary
+The solution implements a **Membership Verification Algorithm** to determine if words in a given set are composed strictly of an authorized character alphabet. It leverages a hash-based lookup structure to achieve constant-time character validation, transforming what could be a nested search problem into a linear scan over the total characters present in the input array.
+
+## Complexity Analysis
+
+### Time Complexity: $O(A + N \cdot L)$
+*   **$A$**: The length of the `allowed` string (cost of building the set).
+*   **$N$**: The number of strings in the `words` array.
+*   **$L$**: The average length of each string in `words`.
+*   **Reasoning**: We perform a single pass over `allowed` ($O(A)$). Subsequently, we iterate over every character in the total corpus of words exactly once. Since `HashSet.contains()` operates in $O(1)$ average time, the lookup cost per character is constant. The `break` condition provides a best-case optimization where we exit early for inconsistent strings.
+
+### Space Complexity: $O(A)$
+*   **Reasoning**: The auxiliary space is dominated by the `HashSet`, which stores at most $A$ unique characters. While the problem space (lowercase English letters) implicitly limits this to $O(1)$ (max 26), in a general implementation, it scales linearly with the size of the alphabet.
+
+---
+
+## Component Deep Dive
+
+### 1. Membership Pre-processing (`HashSet`)
+The choice of `HashSet<Character>` is critical. It abstracts away the need to manually implement a frequency array or a bitmask. 
+*   **Edge Case:** If the `allowed` string contains duplicate characters, the `HashSet` handles the deduplication automatically.
+*   **Optimization Note:** While the current implementation uses `HashSet`, for a fixed alphabet like lowercase English letters (`a-z`), a **boolean array** `boolean[26]` or a **bitmask** (`int`) would be significantly more cache-friendly and faster by avoiding object overhead and hashing latency.
+
+### 2. Inner-Loop Termination (`isConsistent` Flag)
+The loop uses a boolean flag combined with an early `break`. This is an essential short-circuit pattern. By terminating the inner loop as soon as the first forbidden character is detected, we avoid unnecessary iterations in scenarios where the corpus contains long, invalid strings.
+
+### 3. Data Flow
+1.  **Normalization:** The input is decomposed into a set of unique primitives.
+2.  **Validation:** Each string is treated as an independent stream of characters.
+3.  **Aggregation:** The `consistentCount` acts as a simple accumulator, incremented only upon full validation success.
+
+---
+
+## Key Insights
+
+### Performance Nuance: Bitmasking vs. Hashing
+If the problem constraints were guaranteed to be lowercase English letters, the `HashSet` is technically "over-engineered." A bitmask approach would yield superior performance:
+```java
+int mask = 0;
+for (char c : allowed.toCharArray()) mask |= (1 << (c - 'a'));
+// Check: if ((mask & (1 << (c - 'a'))) == 0) // Invalid
+```
+This reduces space to $O(1)$ constant overhead and removes the overhead of hashing and object allocation entirely.
+
+### Potential Pitfalls
+*   **Character Encoding:** The current approach relies on `char` primitive equality. If the input included Unicode characters outside the Basic Multilingual Plane (BMP), `char` would fail to represent them, and `String.toCharArray()` would be insufficient (requiring `codePoints()` instead).
+*   **Memory Overhead:** For massive input arrays, the `HashSet` allocation is negligible; however, in extremely memory-constrained embedded environments, iterating over the `allowed` string directly (or sorting and using binary search) might be preferred to eliminate heap allocation.
+*   **Empty Inputs:** The code safely handles an empty `words` array (returning 0) and an empty `allowed` string (returning 0 unless there are empty strings in `words`, which technically satisfy the "all characters are in allowed" condition vacuously). *Note: Ensure the requirement for empty strings is explicitly defined in the problem contract.*
+
+---
